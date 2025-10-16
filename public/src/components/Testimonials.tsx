@@ -50,7 +50,7 @@ const Testimonials = () => {
     <section className="py-20 bg-gradient-to-b from-green-50 to-amber-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 mt-7">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Leaf className="text-green-600" size={36} />
             <h2 className="text-5xl font-bold text-green-900">Testimoni Pelanggan</h2>

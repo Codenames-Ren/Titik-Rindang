@@ -1,16 +1,15 @@
-// components/Carousel.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarClock, UtensilsCrossed } from 'lucide-react';
 
 interface CarouselItem {
   id: number;
   title: string;
   subtitle: string;
   description: string;
-  price: string;
-  originalPrice: string;
+  cta1: string;
+  cta2: string;
   image: string;
 }
 
@@ -20,37 +19,40 @@ const Carousel = () => {
   const carouselData: CarouselItem[] = [
     {
       id: 1,
-      title: "Kopi Organik Pilihan Terbaik",
-      subtitle: "Titik Rindang Coffee",
-      description: "Nikmati kesegaran kopi organik berkualitas premium dengan cita rasa yang kaya dan aroma yang memikat",
-      price: "Rp 89.000",
-      originalPrice: "Rp 125.000",
-      image: "☕"
+      title: "Reservasi Mudah, Tanpa Antre",
+      subtitle: "Nikmati Kenyamanan di Titik Rindang",
+      description:
+        "Pesan meja favoritmu dari rumah dan nikmati pengalaman ngopi dengan suasana rindang tanpa perlu menunggu.",
+      cta1: "Reservasi Sekarang",
+      cta2: "Lihat Menu",
+      image: "/images/Carousel.jpg",
     },
     {
       id: 2,
-      title: "Arabica Premium Blend",
-      subtitle: "Signature Collection",
-      description: "Perpaduan sempurna biji arabica pilihan dari perkebunan terbaik Indonesia",
-      price: "Rp 95.000",
-      originalPrice: "Rp 130.000",
-      image: "🌿"
+      title: "Menu Lezat untuk Setiap Suasana",
+      subtitle: "Kopi, Makanan & Non-Kopi",
+      description:
+        "Dari espresso klasik hingga matcha latte, dari croissant hingga nasi goreng rindang — semua tersedia untukmu.",
+      cta1: "Jelajahi Menu",
+      cta2: "Pesan Sekarang",
+      image: "/images/Carousel1.jpg",
     },
     {
       id: 3,
-      title: "Cold Brew Special",
-      subtitle: "Refreshing Taste",
-      description: "Sensasi dingin yang menyegarkan dengan rasa kopi yang tetap kuat dan nikmat",
-      price: "Rp 75.000",
-      originalPrice: "Rp 100.000",
-      image: "🥤"
-    }
+      title: "Tempat Cozy untuk Semua Momen",
+      subtitle: "Siang Santai, Malam Hangat",
+      description:
+        "Habiskan waktu bersama teman, kerja santai, atau sekadar melepas penat di ruang hijau favoritmu.",
+      cta1: "Reservasi Meja",
+      cta2: "Lihat Lokasi",
+      image: "/images/Carousel2.jpg",
+    },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselData.length);
-    }, 5000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,92 +65,111 @@ const Carousel = () => {
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-green-50 to-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div className="space-y-6 animate-fade-in">
+    <div className="relative h-screen min-h-[600px] overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div
+        key={currentSlide}
+        className="absolute inset-0 transition-all duration-1000 ease-in-out"
+        style={{
+          backgroundImage: `url(${carouselData[currentSlide].image})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-green-900/40"></div>
+      </div>
+
+      {/* Content Container */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+        <div className="max-w-3xl">
+          {/* Text Section */}
+          <div key={`content-${currentSlide}`} className="space-y-6 animate-fade-in">
             <div className="inline-block">
-              <span className="text-green-800 text-sm font-semibold tracking-wider uppercase bg-green-100 px-4 py-2 rounded-full">
+              <span className="text-green-300 text-sm font-semibold tracking-wider uppercase bg-green-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-green-400/30">
                 {carouselData[currentSlide].subtitle}
               </span>
             </div>
-            
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+
+            <h2 className="text-4xl lg:text-6xl font-bold text-white leading-tight drop-shadow-2xl">
               {carouselData[currentSlide].title}
             </h2>
-            
-            <p className="text-gray-600 text-lg leading-relaxed">
+
+            <p className="text-gray-100 text-lg lg:text-xl leading-relaxed drop-shadow-lg max-w-2xl">
               {carouselData[currentSlide].description}
             </p>
-            
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl font-bold text-green-800">
-                {carouselData[currentSlide].price}
-              </span>
-              <span className="text-xl text-gray-400 line-through">
-                {carouselData[currentSlide].originalPrice}
-              </span>
-            </div>
-            
-            <div className="flex space-x-4 pt-4">
-              <button className="bg-green-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-900 transition-all duration-200 shadow-lg hover:shadow-xl">
-                Pesan Sekarang
-              </button>
-              <button className="border-2 border-green-800 text-green-800 px-8 py-3 rounded-lg font-semibold hover:bg-green-800 hover:text-white transition-all duration-200">
-                Lihat Menu
-              </button>
-            </div>
-          </div>
 
-          {/* Image Section */}
-          <div className="relative">
-            <div className="relative z-10">
-              <div className="bg-white rounded-3xl shadow-2xl p-8 transform hover:scale-105 transition-transform duration-300">
-                <div className="text-9xl text-center mb-4">
-                  {carouselData[currentSlide].image}
-                </div>
-                <div className="absolute top-0 right-0 bg-green-800 text-white px-4 py-2 rounded-bl-3xl rounded-tr-3xl font-semibold">
-                  PROMO
-                </div>
-              </div>
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap gap-4 pt-4">
+              <a
+                href="/reservation"
+                className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 shadow-xl hover:shadow-2xl inline-flex items-center space-x-2 hover:scale-105 transform"
+              >
+                <CalendarClock className="w-5 h-5" />
+                <span>{carouselData[currentSlide].cta1}</span>
+              </a>
+
+              <a
+                href="/menu"
+                className="border-2 border-white/80 backdrop-blur-sm bg-white/10 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-800 transition-all duration-200 inline-flex items-center space-x-2 hover:scale-105 transform"
+              >
+                <UtensilsCrossed className="w-5 h-5" />
+                <span>{carouselData[currentSlide].cta2}</span>
+              </a>
             </div>
-            
-            {/* Decorative Elements */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 bg-green-200 rounded-full opacity-50 blur-2xl"></div>
-            <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-green-300 rounded-full opacity-30 blur-3xl"></div>
           </div>
         </div>
+      </div>
 
-        {/* Carousel Controls */}
-        <div className="flex items-center justify-center space-x-6 mt-12">
+      {/* Controls */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex items-center justify-center space-x-6 bg-black/30 backdrop-blur-md px-6 py-4 rounded-full">
           <button
             onClick={prevSlide}
-            className="bg-white text-green-800 p-3 rounded-full shadow-lg hover:bg-green-800 hover:text-white transition-all duration-200"
+            className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white hover:text-green-800 transition-all duration-200 hover:scale-110 transform"
+            aria-label="Previous slide"
           >
             <ChevronLeft size={24} />
           </button>
-          
+
           <div className="flex space-x-2">
             {carouselData.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  currentSlide === index ? 'w-8 bg-green-800' : 'w-2 bg-gray-300'
+                  currentSlide === index ? 'w-8 bg-white' : 'w-2 bg-white/50'
                 }`}
+                aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>
-          
+
           <button
             onClick={nextSlide}
-            className="bg-white text-green-800 p-3 rounded-full shadow-lg hover:bg-green-800 hover:text-white transition-all duration-200"
+            className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white hover:text-green-800 transition-all duration-200 hover:scale-110 transform"
+            aria-label="Next slide"
           >
             <ChevronRight size={24} />
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
