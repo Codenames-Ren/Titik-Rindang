@@ -24,18 +24,16 @@ func CreateReservation(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid input"})
 		return
 	}
 
-	// Parse tanggal
 	resDate, err := time.Parse(time.RFC3339, input.ReservationDate)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reservation_date format. Use RFC3339"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid reservation date format"})
 		return
 	}
 
-	// Create model
 	reservation := models.Reservation{
 		Name:            input.Name,
 		Phone:           input.Phone,
@@ -48,12 +46,13 @@ func CreateReservation(c *gin.Context) {
 
 	svc := services.NewReservationService(database.DB)
 	if err := svc.CreateReservation(&reservation); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to create reservation"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Reservation created successfully",
+		"status":  "success",
+		"message": "reservation created successfully",
 		"data":    reservation,
 	})
 }
@@ -63,30 +62,38 @@ func GetAllReservations(c *gin.Context) {
 	svc := services.NewReservationService(database.DB)
 	reservations, err := svc.GetAllReservations()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reservations"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to load reservations"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": reservations})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "reservations data loaded successfully",
+		"data":    reservations,
+	})
 }
 
 // Get Reservation by ID
-func GetReservationByIDHandler(c *gin.Context) {
+func GetReservationByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid reservation ID"})
 		return
 	}
 
 	svc := services.NewReservationService(database.DB)
 	reservation, err := svc.GetReservationByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "reservation not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": reservation})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "reservation details loaded successfully",
+		"data":    reservation,
+	})
 }
 
 // Update Reservation
@@ -94,7 +101,7 @@ func UpdateReservation(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid reservation ID"})
 		return
 	}
 
@@ -104,7 +111,7 @@ func UpdateReservation(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid input"})
 		return
 	}
 
@@ -119,12 +126,13 @@ func UpdateReservation(c *gin.Context) {
 	svc := services.NewReservationService(database.DB)
 	updatedReservation, err := svc.UpdateReservation(uint(id), updatedData)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to update reservation"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Reservation updated successfully",
+		"status":  "success",
+		"message": "reservation updated successfully",
 		"data":    updatedReservation,
 	})
 }
@@ -134,15 +142,18 @@ func DeleteReservation(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid reservation ID"})
 		return
 	}
 
 	svc := services.NewReservationService(database.DB)
 	if err := svc.DeleteReservation(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to delete reservation"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Reservation deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "reservation deleted successfully",
+	})
 }

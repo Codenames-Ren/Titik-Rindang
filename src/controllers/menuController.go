@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"titik-rindang/src/database"
 	"titik-rindang/src/models"
@@ -9,129 +10,136 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//Get all menu
+// Get all menu
 func GetAllMenu(c *gin.Context) {
 	var menu []models.Menu
 
 	if err := database.DB.Find(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get product menu data"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to load menu data"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Data product menu loaded successfully!",
-		"data": menu,
+		"status":  "success",
+		"message": "menu data loaded successfully",
+		"data":    menu,
 	})
 }
 
-//Get menu by-ID
+// Get menu by ID
 func GetMenuByID(c *gin.Context) {
 	id := c.Param("id")
 	var menu models.Menu
 
 	if err := database.DB.First(&menu, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product menu not found"})
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "menu not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "details product menu loaded successfully!",
-		"data": menu,
+		"status":  "success",
+		"message": "menu details loaded successfully",
+		"data":    menu,
 	})
 }
 
-//Create product menu
+// Create new menu
 func CreateMenu(c *gin.Context) {
 	var input struct {
-		Name			string		`json:"name" binding:"required"`
-		Tagline			string		`json:"tagline"`
-		ImageURL		string		`json:"image_url"`
-		Price			float64		`json:"price" binding:"required"`
+		Name     string  `json:"name" binding:"required"`
+		Tagline  string  `json:"tagline"`
+		ImageURL string  `json:"image_url"`
+		Price    float64 `json:"price" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid input format"})
 		return
 	}
 
 	menu := models.Menu{
-		Name: 		input.Name,
-		Tagline: 	input.Tagline,
-		ImageURL: 	input.ImageURL,
-		Price: 		input.Price,
+		Name:     input.Name,
+		Tagline:  input.Tagline,
+		ImageURL: input.ImageURL,
+		Price:    input.Price,
 	}
 
 	if err := database.DB.Create(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create product menu"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to create menu"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"status": "success",
-		"message": "Product menu created successfully!",
-		"data": menu,
+		"status":  "success",
+		"message": "menu created successfully",
+		"data":    menu,
 	})
 }
 
-//Update product menu
+// Update menu
 func UpdateMenu(c *gin.Context) {
 	id := c.Param("id")
 	var menu models.Menu
 
 	if err := database.DB.First(&menu, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product menu not found"})
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "menu not found"})
 		return
 	}
 
 	var input struct {
-		Name		string		`json:"name"`
-		Tagline		string		`json:"tagline"`
-		ImageURL	string		`json:"image_url"`
-		Price		float64		`json:"price"`
+		Name     string  `json:"name"`
+		Tagline  string  `json:"tagline"`
+		ImageURL string  `json:"image_url"`
+		Price    float64 `json:"price"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid input format"})
 		return
 	}
 
-	menu.Name = input.Name
-	menu.Tagline = input.Tagline
-	menu.ImageURL = input.ImageURL
-	menu.Price = input.Price
+	// Only update fields that are sent
+	if input.Name != "" {
+		menu.Name = input.Name
+	}
+	if input.Tagline != "" {
+		menu.Tagline = input.Tagline
+	}
+	if input.ImageURL != "" {
+		menu.ImageURL = input.ImageURL
+	}
+	if input.Price != 0 {
+		menu.Price = input.Price
+	}
 
 	if err := database.DB.Save(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to updating product menu"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to update menu"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Product menu updated successfully!",
-		"data": menu,
+		"status":  "success",
+		"message": "menu updated successfully",
+		"data":    menu,
 	})
 }
 
-//Delete product menu
-
+// Delete menu
 func DeleteMenu(c *gin.Context) {
 	id := c.Param("id")
-	var menu models.Menu
-
-	if err := database.DB.First(&menu, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Product menu not found"})
+	_, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid menu ID"})
 		return
 	}
 
-	if err := database.DB.Delete(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product menu"})
+	if err := database.DB.Delete(&models.Menu{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to delete menu"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Product menu deleted successfully!",
+		"status":  "success",
+		"message": "menu deleted successfully",
 	})
 }

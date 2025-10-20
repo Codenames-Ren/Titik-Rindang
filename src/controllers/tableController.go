@@ -18,7 +18,9 @@ func CreateTable(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid input. Please check your request body.",
+		})
 		return
 	}
 
@@ -29,11 +31,16 @@ func CreateTable(c *gin.Context) {
 
 	svc := services.NewTableService(database.DB)
 	if err := svc.CreateTable(&table); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to create table.",
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Table created successfully", "data": table})
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Table created successfully.",
+		"data":    table,
+	})
 }
 
 // Get All Tables
@@ -41,11 +48,16 @@ func GetAllTables(c *gin.Context) {
 	svc := services.NewTableService(database.DB)
 	tables, err := svc.GetAllTables()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tables"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to retrieve tables.",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": tables})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tables fetched successfully.",
+		"data":    tables,
+	})
 }
 
 // Get Table by ID
@@ -53,18 +65,25 @@ func GetTableByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table ID"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid table ID.",
+		})
 		return
 	}
 
 	svc := services.NewTableService(database.DB)
 	table, err := svc.GetTableByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Table not found.",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": table})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Table found.",
+		"data":    table,
+	})
 }
 
 // Update Table
@@ -72,7 +91,9 @@ func UpdateTable(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid table ID.",
+		})
 		return
 	}
 
@@ -82,7 +103,9 @@ func UpdateTable(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid input. Please check your request body.",
+		})
 		return
 	}
 
@@ -94,11 +117,16 @@ func UpdateTable(c *gin.Context) {
 	svc := services.NewTableService(database.DB)
 	updated, err := svc.UpdateTable(uint(id), table)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Failed to update table.",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Table updated successfully", "data": updated})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Table updated successfully.",
+		"data":    updated,
+	})
 }
 
 // Delete Table
@@ -106,15 +134,21 @@ func DeleteTable(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table ID"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid table ID.",
+		})
 		return
 	}
 
 	svc := services.NewTableService(database.DB)
 	if err := svc.DeleteTable(uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Table not found or could not be deleted.",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Table deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Table deleted successfully.",
+	})
 }
