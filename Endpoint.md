@@ -8,7 +8,10 @@ List Endpoint :
 - /reservation
   Method : Post, Get
 
-- Table
+- /table
+  Method: Post, Get
+
+- /menu
   Method: Post, Get
 
 \*Akan segera dilengkapi seiring berjalannya project ini.
