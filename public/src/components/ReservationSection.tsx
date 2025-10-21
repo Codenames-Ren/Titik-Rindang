@@ -196,7 +196,7 @@ const ReservationSection = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors text-gray-900 placeholder:text-gray-400"
                     placeholder="Masukkan nama lengkap"
                   />
                 </div>
@@ -210,7 +210,7 @@ const ReservationSection = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors text-gray-900 placeholder:text-gray-400"
                     placeholder="email@example.com"
                   />
                 </div>
@@ -224,7 +224,7 @@ const ReservationSection = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors text-gray-900 placeholder:text-gray-400"
                     placeholder="08xxxxxxxxxx"
                   />
                 </div>
@@ -254,7 +254,7 @@ const ReservationSection = () => {
                     value={formData.date}
                     onChange={handleInputChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors text-gray-900"
                   />
                 </div>
 
@@ -267,11 +267,13 @@ const ReservationSection = () => {
                     name="time"
                     value={formData.time}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors ${
+                      formData.time ? 'text-gray-900' : 'text-gray-400' // Ganti warna jika belum dipilih
+                    }`}
                   >
                     <option value="">Pilih waktu</option>
                     {timeSlots.map((slot) => (
-                      <option key={slot} value={slot}>
+                      <option key={slot} value={slot} className="text-gray-900">
                         {slot} WIB
                       </option>
                     ))}
@@ -287,7 +289,7 @@ const ReservationSection = () => {
                     name="guests"
                     value={formData.guests}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors text-gray-900"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                       <option key={num} value={num}>
@@ -306,7 +308,7 @@ const ReservationSection = () => {
                     value={formData.specialRequest}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-800 focus:outline-none transition-colors resize-none text-gray-900 placeholder:text-gray-400"
                     placeholder="Contoh: Meja dekat jendela, ulang tahun, dll."
                   />
                 </div>
