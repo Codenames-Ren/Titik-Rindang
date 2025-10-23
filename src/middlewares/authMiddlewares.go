@@ -87,3 +87,27 @@ func AdminMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func CashierMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists || role != "cashier" && role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access forbidden"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func StaffMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists || role != "staff" && role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access forbidden: Admin only"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
