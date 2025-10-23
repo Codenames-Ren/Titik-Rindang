@@ -28,7 +28,7 @@ func ConnectDB() (*gorm.DB, error) {
 	}
 
 	db.AutoMigrate(
-		&models.Admin{}, 
+		&models.Auth{}, 
 		models.Invoice{}, 
 		models.Menu{},
 		models.OrderItem{},

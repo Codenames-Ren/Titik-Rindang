@@ -6,11 +6,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type Admin struct {
+type Auth struct {
 	ID			uint			`gorm:"primaryKey"`
 	Username	string			`gorm:"unique; not null"`
 	Password	string			`gorm:"not null"`
-	Role		string			`gorm:"type:varchar(20);default:'admin'"`
+	Role		string			`gorm:"type:enum('admin','staff');default:'admin'"`
 	CreatedAt	time.Time
 	UpdatedAt	time.Time
 	DeletedAt	gorm.DeletedAt	`gorm:"index"`
