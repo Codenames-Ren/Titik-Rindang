@@ -77,7 +77,7 @@ const AboutSection = () => {
             className={`inline-block transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
-          >
+          ><br /><br />
             <span className="text-green-800 text-sm font-semibold tracking-wider uppercase bg-green-100 px-4 py-2 rounded-full">
               Tentang Kami
             </span>

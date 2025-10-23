@@ -33,8 +33,8 @@ const Carousel = () => {
       subtitle: "Kopi, Makanan & Non-Kopi",
       description:
         "Dari espresso klasik hingga matcha latte, dari croissant hingga nasi goreng rindang — semua tersedia untukmu.",
-      cta1: "Jelajahi Menu",
-      cta2: "Pesan Sekarang",
+      cta1: "Ayo Reservasi!",
+      cta2: "Jelajahi Menu",
       image: "/images/Carousel1.jpg",
     },
     {
@@ -43,8 +43,8 @@ const Carousel = () => {
       subtitle: "Siang Santai, Malam Hangat",
       description:
         "Habiskan waktu bersama teman, kerja santai, atau sekadar melepas penat di ruang hijau favoritmu.",
-      cta1: "Reservasi Meja",
-      cta2: "Lihat Lokasi",
+      cta1: "Buat Reservasi",
+      cta2: "Mulai Memesan",
       image: "/images/Carousel2.jpg",
     },
   ];
