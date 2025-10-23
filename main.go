@@ -21,7 +21,7 @@ func main() {
 
 	//automigrate
 	database.DB.AutoMigrate(
-		&models.Admin{},
+		&models.Auth{},
 		&models.Invoice{},
 		&models.Menu{},
 		&models.OrderItem{},
