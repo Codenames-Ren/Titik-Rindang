@@ -49,6 +49,7 @@ func main() {
 	routes.ReservationRoutes(router)
 	routes.MenuRoutes(router)
 	routes.TableRoutes(router)
+	routes.AuthRoutes(router)
 
 	//Server berjalan di port 8080
 	port := os.Getenv("PORT")
