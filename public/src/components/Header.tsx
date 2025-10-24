@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Menu, X, LogOut } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMugHot } from '@fortawesome/free-solid-svg-icons'; // ✅ gunakan ini
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,14 +13,12 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Halaman selain home menggunakan style solid
   const isWhitePage = pathname !== '/';
   const isAdminPage = pathname === '/admin';
 
   useEffect(() => {
     if (pathname === '/') {
       setIsScrolled(false);
-
       const handleScroll = () => {
         if (window.scrollY >= 550) {
           setIsScrolled(true);
@@ -26,7 +26,6 @@ const Header = () => {
           setIsScrolled(false);
         }
       };
-
       handleScroll();
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
@@ -44,7 +43,6 @@ const Header = () => {
     { name: 'Contact', href: '/contact' },
   ];
 
-  // Fungsi logout
   const handleLogout = () => {
     if (confirm('Yakin ingin keluar dari halaman admin?')) {
       router.push('/');
@@ -61,34 +59,39 @@ const Header = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
+          {/* === LOGO with FontAwesome === */}
+          <Link href="/" className="flex items-center space-x-3 group">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                isWhitePage || isScrolled ? 'bg-green-800' : 'bg-green-800/90'
+              className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-md ${
+                isWhitePage || isScrolled
+                  ? 'bg-gradient-to-br from-green-800 to-green-600'
+                  : 'bg-green-700/90'
               }`}
             >
-              <span className="font-bold text-xl text-white">T</span>
+              <FontAwesomeIcon icon={faMugHot} className="text-white text-2xl" />
+              <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity" />
             </div>
             <div>
               <h1
-                className={`text-2xl font-bold transition-colors duration-300 ${
+                className={`text-2xl font-extrabold tracking-tight transition-colors duration-300 ${
                   isWhitePage || isScrolled ? 'text-green-800' : 'text-white'
                 }`}
               >
                 Titik Rindang
               </h1>
               <p
-                className={`text-xs transition-colors duration-300 ${
-                  isWhitePage || isScrolled ? 'text-gray-600' : 'text-gray-100'
+                className={`text-sm italic transition-colors duration-300 ${
+                  isWhitePage || isScrolled
+                    ? 'text-gray-600'
+                    : 'text-gray-200/90'
                 }`}
               >
                 Premium Coffee Experience
               </p>
             </div>
-          </div>
+          </Link>
 
-          {/* Desktop Navigation */}
+          {/* === Navigation & Icons tetap sama === */}
           {!isAdminPage && (
             <nav className="hidden md:flex space-x-8">
               {menuItems.map((item) => {
@@ -114,10 +117,8 @@ const Header = () => {
             </nav>
           )}
 
-          {/* Icons */}
           <div className="flex items-center space-x-4">
             {isAdminPage ? (
-              // === LOGOUT ICON saat di /admin ===
               <button
                 onClick={handleLogout}
                 className={`transition-colors ${
@@ -129,7 +130,6 @@ const Header = () => {
                 <LogOut size={24} />
               </button>
             ) : (
-              // === LOGIN ICON untuk halaman biasa ===
               <Link
                 href="/login"
                 className={`transition-colors ${
@@ -153,7 +153,6 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {!isAdminPage && isMenuOpen && (
           <nav
             className={`md:hidden pb-4 space-y-2 rounded-lg mt-2 transition-all ${
