@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Instagram, Facebook, Clock, Send, MessageSquare } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMugHot } from '@fortawesome/free-solid-svg-icons';
 
 interface ContactInfo {
   icon: React.ReactNode;
@@ -58,7 +60,7 @@ const ContactSection = () => {
     {
       icon: <Clock className="w-6 h-6" />,
       title: "Jam Buka",
-      details: ["Senin - Jumat: 07.00 - 22.00", "Sabtu - Minggu: 08.00 - 23.00"],
+      details: ["Senin - Jumat: 08.00 - 22.00", "Sabtu - Minggu: 08.00 - 24.00"],
       color: "text-green-800"
     }
   ];
@@ -124,7 +126,7 @@ const ContactSection = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
+                    className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
                     placeholder="Masukkan nama Anda"
                   />
                 </div>
@@ -136,7 +138,7 @@ const ContactSection = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
+                    className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
                     placeholder="email@example.com"
                   />
                 </div>
@@ -148,8 +150,8 @@ const ContactSection = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
-                    placeholder="+62 812-xxxx-xxxx"
+                    className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
+                    placeholder="+62 8xx-xxxx-xxxx"
                   />
                 </div>
 
@@ -160,7 +162,7 @@ const ContactSection = () => {
                     value={formData.message}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all resize-none"
                     placeholder="Tulis pesan Anda di sini..."
                   />
                 </div>
@@ -243,7 +245,14 @@ const ContactSection = () => {
         {/* Bottom CTA */}
         <div className="bg-gradient-to-r from-green-800 to-green-900 rounded-3xl p-8 lg:p-12 text-center">
           <div className="max-w-3xl mx-auto">
-            <div className="text-6xl mb-6">☕</div>
+            {/* Logo Icon - Updated to match Header */}
+            <div className="flex justify-center mb-6">
+              <div className="relative w-20 h-20 bg-gradient-to-br from-white to-green-50 rounded-2xl flex items-center justify-center shadow-2xl">
+                <FontAwesomeIcon icon={faMugHot} className="text-green-800 text-4xl" />
+                <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-50" />
+              </div>
+            </div>
+            
             <h3 className="text-3xl lg:text-4xl font-bold text-white mb-4">
               Kunjungi Kami Hari Ini!
             </h3>

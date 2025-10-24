@@ -29,12 +29,12 @@ const Features = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white">
       <div className="grid md:grid-cols-3 gap-8">
         {features.map((feature, index) => (
           <div 
             key={index} 
-            className="text-center p-6 rounded-xl hover:bg-green-50 transition-colors duration-200 cursor-pointer"
+            className="text-center bg-green-50 p-6 rounded-xl hover:bg-amber-50 transition-colors duration-200 cursor-pointer"
           >
             <div className="text-5xl mb-4">{feature.icon}</div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
