@@ -9,26 +9,62 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Untuk loading state
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
-    // Data login admin (bisa kamu ubah sesuai kebutuhan)
-    const adminUser = 'admin';
-    const adminPass = 'admin123';
+    try {
+      // 1. Panggil API backend kamu di port 8080
+      // (Sesuai dengan main.go dan authRoutes.go)
+      const response = await fetch('http://localhost:8080/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // 2. Kirim username & password sebagai JSON
+        // (Sesuai dengan yang diharapkan loginController.go)
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (username === adminUser && password === adminPass) {
-      // Login sukses → redirect ke halaman admin
-      router.push('/admin');
-    } else {
-      setError('Username atau password salah.');
+      // 3. Tangani respon dari backend
+      const data = await response.json();
+
+      if (response.ok) {
+        // Jika login sukses (backend kirim status 200 OK)
+        
+        // 4. Simpan token di localStorage
+        // (Backend kamu mengirim "token", "role", "username")
+        localStorage.setItem('token', data.token);
+
+        // 5. Cek role dari respon backend
+        if (data.role === 'admin') {
+          // Login sukses & role adalah admin → redirect
+          router.push('/admin');
+        } else {
+          // Login sukses tapi bukan admin
+          setError('Anda berhasil login, tetapi bukan admin.');
+        }
+
+      } else {
+        // Jika login gagal (backend kirim status 401 atau lainnya)
+        // Tampilkan pesan error dari backend ("Invalid username or password")
+        setError(data.error || 'Username atau password salah.');
+      }
+    } catch (err) {
+      // Tangani jika backend mati atau error jaringan
+      setError('Gagal terhubung ke server. Coba lagi nanti.');
+    } finally {
+      setIsLoading(false); // Selesai loading
     }
   };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6 mt-20" >
-        {/* Logo */}
+        {/* Logo (Tidak berubah) */}
         <div className="flex flex-col items-center space-y-2">
           <div className="w-12 h-12 rounded-full bg-green-800 flex items-center justify-center">
             <Coffee className="text-white" size={26} />
@@ -37,7 +73,7 @@ const Login = () => {
           <p className="text-gray-500 text-sm">Masuk ke dashboard admin</p>
         </div>
 
-        {/* Form Login */}
+        {/* Form Login (Fungsi submit diubah) */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -48,6 +84,7 @@ const Login = () => {
               placeholder="Masukkan username"
               className="w-full border border-gray-300 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
               required
+              disabled={isLoading} // Tambahan: nonaktifkan saat loading
             />
           </div>
 
@@ -60,6 +97,7 @@ const Login = () => {
               placeholder="••••••••"
               className="w-full border border-gray-300 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
               required
+              disabled={isLoading} // Tambahan: nonaktifkan saat loading
             />
           </div>
 
@@ -69,9 +107,11 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-green-800 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+            className="w-full bg-green-800 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-green-400"
+            disabled={isLoading} // Tambahan: nonaktifkan saat loading
           >
-            Masuk
+            {/* Ubah teks tombol saat loading */}
+            {isLoading ? 'Loading...' : 'Masuk'}
           </button>
         </form>
       </div>
