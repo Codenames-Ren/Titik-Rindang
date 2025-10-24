@@ -7,7 +7,6 @@ interface MenuItem {
   name: string;
   price: string;
   description: string;
-  badge?: string;
   image: string;
 }
 
@@ -158,49 +157,35 @@ const MenuSection = () => {
 
   const menuItems: Record<string, MenuItem[]> = {
     coffee: [
-      { name: "Espresso", price: "15.000", description: "Single shot espresso Italia yang kuat dan aromatik", badge: "Classic", image: "/images/Carousel1.jpg" },
-      { name: "Cappuccino", price: "25.000", description: "Espresso dengan foam susu lembut dan halus", badge: "Popular", image: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&h=300&fit=crop" },
+      { name: "Espresso", price: "15.000", description: "Single shot espresso Italia yang kuat dan aromatik", image: "/images/Carousel1.jpg" },
+      { name: "Cappuccino", price: "25.000", description: "Espresso dengan foam susu lembut dan halus", image: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&h=300&fit=crop" },
       { name: "Vietnam Drip", price: "22.000", description: "Kopi Vietnam tradisional dengan susu kental manis", image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop" },
-      { name: "Kopi Susu Rindang", price: "20.000", description: "Signature coffee dengan susu segar pilihan", badge: "Signature", image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop" },
-      { name: "Cold Brew", price: "28.000", description: "Kopi dingin diseduh 12 jam untuk rasa smooth", badge: "Best Seller", image: "https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400&h=300&fit=crop" },
-      { name: "Affogato", price: "32.000", description: "Espresso panas dituang ke atas es krim vanilla", badge: "Premium", image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&h=300&fit=crop" },
+      { name: "Kopi Susu Rindang", price: "20.000", description: "Signature coffee dengan susu segar pilihan", image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop" },
+      { name: "Cold Brew", price: "28.000", description: "Kopi dingin diseduh 12 jam untuk rasa smooth", image: "https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400&h=300&fit=crop" },
+      { name: "Affogato", price: "32.000", description: "Espresso panas dituang ke atas es krim vanilla", image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&h=300&fit=crop" },
       { name: "Caramel Macchiato", price: "30.000", description: "Espresso dengan susu dan saus karamel", image: "https://images.unsplash.com/photo-1599750560706-80293f469027?w=400&h=300&fit=crop" },
       { name: "Flat White", price: "27.000", description: "Espresso dengan microfoam susu yang creamy", image: "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=400&h=300&fit=crop" }
     ],
     food: [
-      { name: "Croissant Butter", price: "18.000", description: "Croissant renyah dengan butter premium", badge: "Fresh Daily", image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop" },
-      { name: "Banana Cake", price: "22.000", description: "Kue pisang homemade dengan kacang walnut", badge: "Homemade", image: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&h=300&fit=crop" },
-      { name: "Sandwich Club", price: "35.000", description: "Sandwich lapis tiga dengan isian lengkap", badge: "Best Seller", image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=300&fit=crop" },
-      { name: "Pasta Carbonara", price: "38.000", description: "Pasta fettuccine dengan saus carbonara Italia", badge: "Popular", image: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400&h=300&fit=crop" },
-      { name: "Nasi Goreng Rindang", price: "32.000", description: "Nasi goreng spesial dengan telur mata sapi", badge: "Signature", image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop" },
+      { name: "Croissant Butter", price: "18.000", description: "Croissant renyah dengan butter premium", image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop" },
+      { name: "Banana Cake", price: "22.000", description: "Kue pisang homemade dengan kacang walnut", image: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&h=300&fit=crop" },
+      { name: "Sandwich Club", price: "35.000", description: "Sandwich lapis tiga dengan isian lengkap", image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=300&fit=crop" },
+      { name: "Pasta Carbonara", price: "38.000", description: "Pasta fettuccine dengan saus carbonara Italia", image: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400&h=300&fit=crop" },
+      { name: "Nasi Goreng Rindang", price: "32.000", description: "Nasi goreng spesial dengan telur mata sapi", image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop" },
       { name: "French Fries", price: "20.000", description: "Kentang goreng crispy dengan saus pilihan", image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=300&fit=crop" },
-      { name: "Beef Burger", price: "42.000", description: "Burger daging sapi premium dengan keju leleh", badge: "Premium", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
+      { name: "Beef Burger", price: "42.000", description: "Burger daging sapi premium dengan keju leleh", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop" },
       { name: "Caesar Salad", price: "35.000", description: "Salad segar dengan dressing caesar dan crouton", image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop" }
     ],
     nonCoffee: [
-      { name: "Matcha Latte", price: "28.000", description: "Matcha premium Jepang dengan susu segar", badge: "Premium", image: "/images/Matcha.jpg" },
-      { name: "Hot Chocolate", price: "25.000", description: "Cokelat panas creamy dengan marshmallow", badge: "Popular", image: "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=400&h=300&fit=crop" },
-      { name: "Thai Tea", price: "22.000", description: "Teh Thailand original dengan susu evaporasi", badge: "Best Seller", image: "https://images.unsplash.com/photo-1623508589276-68d3ad709854?w=400&h=300&fit=crop" },
-      { name: "Fresh Orange Juice", price: "20.000", description: "Jus jeruk segar tanpa gula tambahan", badge: "Healthy", image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&h=300&fit=crop" },
+      { name: "Matcha Latte", price: "28.000", description: "Matcha premium Jepang dengan susu segar", image: "/images/Matcha.jpg" },
+      { name: "Hot Chocolate", price: "25.000", description: "Cokelat panas creamy dengan marshmallow", image: "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=400&h=300&fit=crop" },
+      { name: "Thai Tea", price: "22.000", description: "Teh Thailand original dengan susu evaporasi", image: "https://images.unsplash.com/photo-1623508589276-68d3ad709854?w=400&h=300&fit=crop" },
+      { name: "Fresh Orange Juice", price: "20.000", description: "Jus jeruk segar tanpa gula tambahan", image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&h=300&fit=crop" },
       { name: "Lemon Tea", price: "18.000", description: "Teh lemon segar dengan madu", image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop" },
       { name: "Milk Tea", price: "24.000", description: "Teh susu klasik dengan boba", image: "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=400&h=300&fit=crop" },
-      { name: "Strawberry Smoothie", price: "28.000", description: "Smoothie stroberi segar dengan yogurt", badge: "Signature", image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400&h=300&fit=crop" },
+      { name: "Strawberry Smoothie", price: "28.000", description: "Smoothie stroberi segar dengan yogurt", image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400&h=300&fit=crop" },
       { name: "Mojito Non-Alcohol", price: "25.000", description: "Minuman segar dengan mint dan lime", image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=300&fit=crop" }
     ]
-  };
-
-  const getBadgeColor = (badge?: string) => {
-    const colors: Record<string, string> = {
-      'Signature': 'bg-green-800 text-white',
-      'Best Seller': 'bg-amber-500 text-white',
-      'Popular': 'bg-red-500 text-white',
-      'Premium': 'bg-purple-600 text-white',
-      'Classic': 'bg-gray-700 text-white',
-      'Fresh Daily': 'bg-blue-500 text-white',
-      'Homemade': 'bg-orange-500 text-white',
-      'Healthy': 'bg-green-500 text-white'
-    };
-    return badge ? colors[badge] || 'bg-gray-500 text-white' : '';
   };
 
   const addToCart = (item: MenuItem) => {
@@ -345,15 +330,6 @@ const MenuSection = () => {
                   alt={item.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                {item.badge && (
-                  <div className="absolute top-3 right-3">
-                    <span className={`${getBadgeColor(item.badge)} text-xs font-bold px-3 py-1 rounded-full inline-flex items-center space-x-1 shadow-lg`}>
-                      <Sparkles className="w-3 h-3" />
-                      <span>{item.badge}</span>
-                    </span>
-                  </div>
-                )}
               </div>
 
               <div className="p-5">

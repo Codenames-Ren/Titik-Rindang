@@ -1,22 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Menu, X } from 'lucide-react';
+import { User, Menu, X, LogOut } from 'lucide-react';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Halaman selain home menggunakan style solid
   const isWhitePage = pathname !== '/';
+  const isAdminPage = pathname === '/admin';
 
   useEffect(() => {
     if (pathname === '/') {
       setIsScrolled(false);
-      
+
       const handleScroll = () => {
         if (window.scrollY >= 550) {
           setIsScrolled(true);
@@ -26,7 +28,6 @@ const Header = () => {
       };
 
       handleScroll();
-
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
     } else {
@@ -42,6 +43,13 @@ const Header = () => {
     { name: 'Testimonials', href: '/testimonials' },
     { name: 'Contact', href: '/contact' },
   ];
+
+  // Fungsi logout
+  const handleLogout = () => {
+    if (confirm('Yakin ingin keluar dari halaman admin?')) {
+      router.push('/');
+    }
+  };
 
   return (
     <header
@@ -81,40 +89,59 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`transition-colors duration-200 font-medium ${
-                    isWhitePage || isScrolled
-                      ? isActive
-                        ? 'text-green-800 font-semibold border-b-2 border-green-800'
-                        : 'text-gray-700 hover:text-green-800'
-                      : isActive
-                      ? 'text-green-300 font-semibold border-b-2 border-green-300'
-                      : 'text-white hover:text-green-300'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
+          {!isAdminPage && (
+            <nav className="hidden md:flex space-x-8">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`transition-colors duration-200 font-medium ${
+                      isWhitePage || isScrolled
+                        ? isActive
+                          ? 'text-green-800 font-semibold border-b-2 border-green-800'
+                          : 'text-gray-700 hover:text-green-800'
+                        : isActive
+                        ? 'text-green-300 font-semibold border-b-2 border-green-300'
+                        : 'text-white hover:text-green-300'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
 
           {/* Icons */}
           <div className="flex items-center space-x-4">
-            <button
-              className={`transition-colors ${
-                isWhitePage || isScrolled
-                  ? 'text-green-800 hover:text-green-600'
-                  : 'text-white hover:text-green-300'
-              }`}
-            >
-              <User size={24} />
-            </button>
+            {isAdminPage ? (
+              // === LOGOUT ICON saat di /admin ===
+              <button
+                onClick={handleLogout}
+                className={`transition-colors ${
+                  isWhitePage || isScrolled
+                    ? 'text-green-800 hover:text-green-600'
+                    : 'text-white hover:text-green-300'
+                }`}
+              >
+                <LogOut size={24} />
+              </button>
+            ) : (
+              // === LOGIN ICON untuk halaman biasa ===
+              <Link
+                href="/login"
+                className={`transition-colors ${
+                  isWhitePage || isScrolled
+                    ? 'text-green-800 hover:text-green-600'
+                    : 'text-white hover:text-green-300'
+                }`}
+              >
+                <User size={24} />
+              </Link>
+            )}
+
             <button
               className={`md:hidden transition-colors ${
                 isWhitePage || isScrolled ? 'text-green-800' : 'text-white'
@@ -127,7 +154,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
+        {!isAdminPage && isMenuOpen && (
           <nav
             className={`md:hidden pb-4 space-y-2 rounded-lg mt-2 transition-all ${
               isWhitePage || isScrolled
