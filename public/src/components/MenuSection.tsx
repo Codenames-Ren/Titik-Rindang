@@ -35,20 +35,20 @@ const IMAGE_SRC = './images/DenahMeja.png';
 const STORAGE_KEY = 'table-map-statuses-v1';
 
 const DEFAULT_TABLES: Table[] = [
-  { id: 'I6-1', label: 'Meja Indoor (6 kursi) - 1', seats: 6, area: 'Indoor', coords: [180,153,33] },
-  { id: 'I6-2', label: 'Meja Indoor (6 kursi) - 2', seats: 6, area: 'Indoor', coords: [180,292,35] },
-  { id: 'I6-3', label: 'Meja Indoor (6 kursi) - 3', seats: 6, area: 'Indoor', coords: [180,433,38] },
+  { id: 'I6-1', label: 'Meja Indoor (6 kursi) - 1', seats: 6, area: 'Indoor', coords: [180,158,35] },
+  { id: 'I6-2', label: 'Meja Indoor (6 kursi) - 2', seats: 6, area: 'Indoor', coords: [180,295,35] },
+  { id: 'I6-3', label: 'Meja Indoor (6 kursi) - 3', seats: 6, area: 'Indoor', coords: [180,428,35] },
   { id: 'I4-1', label: 'Meja Indoor (4 kursi) - 1', seats: 4, area: 'Indoor', coords: [536,457,23] },
-  { id: 'I4-2', label: 'Meja Indoor (4 kursi) - 2', seats: 4, area: 'Indoor', coords: [681,455,23] },
-  { id: 'I2-1', label: 'Meja Indoor (2 kursi) - 1', seats: 2, area: 'Indoor', coords: [838,241,19] },
+  { id: 'I4-2', label: 'Meja Indoor (4 kursi) - 2', seats: 4, area: 'Indoor', coords: [680,455,23] },
+  { id: 'I2-1', label: 'Meja Indoor (2 kursi) - 1', seats: 2, area: 'Indoor', coords: [838,242,19] },
   { id: 'I2-2', label: 'Meja Indoor (2 kursi) - 2', seats: 2, area: 'Indoor', coords: [838,318,19] },
-  { id: 'I2-3', label: 'Meja Indoor (2 kursi) - 3', seats: 2, area: 'Indoor', coords: [838,394,19] },
-  { id: 'I2-4', label: 'Meja Indoor (2 kursi) - 4', seats: 2, area: 'Indoor', coords: [837,468,19] },
-  { id: 'I7-1', label: 'Meja Indoor (7 kursi)', seats: 7, area: 'Indoor', coords: [838,135,27] },
-  { id: 'O4-1', label: 'Meja Outdoor (4 kursi) - 1', seats: 4, area: 'Outdoor', coords: [208,588,24] },
+  { id: 'I2-3', label: 'Meja Indoor (2 kursi) - 3', seats: 2, area: 'Indoor', coords: [838,393,19] },
+  { id: 'I2-4', label: 'Meja Indoor (2 kursi) - 4', seats: 2, area: 'Indoor', coords: [836,468,19] },
+  { id: 'I7-1', label: 'Meja Indoor (7 kursi)', seats: 7, area: 'Indoor', coords: [837,136,28] },
+  { id: 'O4-1', label: 'Meja Outdoor (4 kursi) - 1', seats: 4, area: 'Outdoor', coords: [210,588,24] },
   { id: 'O4-2', label: 'Meja Outdoor (4 kursi) - 2', seats: 4, area: 'Outdoor', coords: [511,590,24] },
-  { id: 'O4-3', label: 'Meja Outdoor (4 kursi) - 3', seats: 4, area: 'Outdoor', coords: [672,591,24] },
-  { id: 'O4-4', label: 'Meja Outdoor (4 kursi) - 4', seats: 4, area: 'Outdoor', coords: [844,589,24] },
+  { id: 'O4-3', label: 'Meja Outdoor (4 kursi) - 3', seats: 4, area: 'Outdoor', coords: [671,592,24] },
+  { id: 'O4-4', label: 'Meja Outdoor (4 kursi) - 4', seats: 4, area: 'Outdoor', coords: [842,588,24] },
 ];
 
 const statusColor = (s: TableStatus) => {
@@ -118,32 +118,29 @@ const MenuSection = () => {
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
+    
     const onLoad = () => {
       setNaturalSize({ w: img.naturalWidth || 920, h: img.naturalHeight || 650 });
       setImageLoaded(true);
-      // Force a re-render after image loads to recalculate positions
-      setTimeout(() => {
-        setImageLoaded(prev => prev);
-      }, 100);
     };
+    
     if (img.complete) {
       onLoad();
     }
+    
     img.addEventListener('load', onLoad);
     return () => img.removeEventListener('load', onLoad);
   }, [showTableSelection]);
 
-  // Recalculate positions when modal opens or window resizes
   useEffect(() => {
     if (!showTableSelection) return;
     
     const handleResize = () => {
-      setImageLoaded(prev => !prev);
-      setTimeout(() => setImageLoaded(prev => !prev), 50);
+      setImageLoaded(false);
+      setTimeout(() => setImageLoaded(true), 50);
     };
     
     window.addEventListener('resize', handleResize);
-    // Trigger initial calculation
     setTimeout(handleResize, 100);
     
     return () => window.removeEventListener('resize', handleResize);
@@ -152,7 +149,7 @@ const MenuSection = () => {
   const categories: MenuCategory[] = [
     { id: 'coffee', label: 'Kopi', icon: '☕' },
     { id: 'food', label: 'Makanan', icon: '🍽️' },
-    { id: 'nonCoffee', label: 'Non-Kopi', icon: '🥐' }
+    { id: 'nonCoffee', label: 'Non-Kopi', icon: '🥤' }
   ];
 
   const menuItems: Record<string, MenuItem[]> = {
@@ -232,8 +229,8 @@ const MenuSection = () => {
   const getScale = () => {
     const img = imgRef.current;
     if (!img || !naturalSize.w) return 1;
-    const displayWidth = img.getBoundingClientRect().width;
-    return displayWidth / naturalSize.w;
+    const rect = img.getBoundingClientRect();
+    return rect.width / naturalSize.w;
   };
 
   const tableAtPos = (e: React.MouseEvent) => {
@@ -280,6 +277,37 @@ const MenuSection = () => {
 
   return (
     <section ref={sectionRef} className="bg-gradient-to-b from-white to-gray-50 py-16 lg:py-24">
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes bounceIn {
+          0% { transform: scale(0); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+        .animate-bounceIn {
+          animation: bounceIn 0.6s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.6s ease-out;
+        }
+      `}</style>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -395,8 +423,8 @@ const MenuSection = () => {
       {/* Cart Modal */}
       {showCart && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCart(false)} />
-          <div className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-xl z-10">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setShowCart(false)} />
+          <div className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-xl z-10 animate-slideUp">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
               <h3 className="text-2xl font-bold text-gray-900">Keranjang Pesanan</h3>
               <button onClick={() => setShowCart(false)} className="text-gray-400 hover:text-gray-600">
@@ -455,23 +483,29 @@ const MenuSection = () => {
         </div>
       )}
 
-      {/* Table Selection Modal */}
+      {/* Table Selection Modal - Updated Design */}
       {showTableSelection && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setShowTableSelection(false)} />
-            <div className="relative bg-white rounded-2xl max-w-6xl w-full shadow-xl z-10 max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setShowTableSelection(false)} />
+            <div className="relative bg-white rounded-2xl max-w-6xl w-full shadow-2xl z-10 max-h-[90vh] overflow-hidden animate-slideUp">
+              <div className="sticky top-0 bg-gradient-to-r from-green-800 to-green-700 text-white p-6 flex items-center justify-between z-20 shadow-lg">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Pilih Meja Anda</h3>
-                  <p className="text-sm text-gray-500 mt-1">Klik meja yang tersedia (hijau) pada denah</p>
+                  <h3 className="text-2xl font-bold flex items-center gap-2">
+                    <MapPin className="w-6 h-6" />
+                    Pilih Meja Anda
+                  </h3>
+                  <p className="text-green-100 text-sm mt-1">Klik meja yang tersedia (hijau) pada denah</p>
                 </div>
-                <button onClick={() => setShowTableSelection(false)} className="text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={() => setShowTableSelection(false)} 
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
                 <div className="grid lg:grid-cols-3 gap-6">
                   {/* Map Section */}
                   <div className="lg:col-span-2" ref={containerRef}>
@@ -480,19 +514,12 @@ const MenuSection = () => {
                         ref={imgRef}
                         src={IMAGE_SRC}
                         alt="Denah Meja"
-                        className="w-full rounded-2xl border border-gray-200 shadow-sm"
+                        className="w-full rounded-xl border-2 border-gray-200 shadow-md"
                         onClick={tableAtPos}
-                        onLoad={() => {
-                          const img = imgRef.current;
-                          if (img) {
-                            setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-                            setImageLoaded(true);
-                          }
-                        }}
                         style={{ cursor: 'pointer', userSelect: 'none', display: 'block' }}
                       />
 
-                      {/* Table Markers */}
+                      {/* Table Markers - Responsive */}
                       {imageLoaded && DEFAULT_TABLES.map(t => {
                         const [cx, cy, r] = t.coords;
                         const scale = getScale();
@@ -513,8 +540,8 @@ const MenuSection = () => {
                                 alert(`Meja ini ${s === 'occupied' ? 'sedang terisi' : 'sudah dipesan'}. Silakan pilih meja lain.`);
                               }
                             }}
-                            title={`${t.label} — ${t.seats} kursi — ${t.area}`}
-                            className="absolute"
+                            title={`${t.label} – ${t.seats} kursi – ${t.area}`}
+                            className="absolute transition-all duration-300 hover:scale-110"
                             style={{
                               left: `${left}px`,
                               top: `${top}px`,
@@ -523,7 +550,7 @@ const MenuSection = () => {
                               transform: 'translate(-50%, -50%)',
                               borderRadius: '9999px',
                               border: selectedTable?.id === t.id ? '4px solid #166534' : '3px solid rgba(255,255,255,0.9)',
-                              boxShadow: selectedTable?.id === t.id ? '0 0 0 4px rgba(22, 101, 52, 0.3)' : '0 6px 18px rgba(0,0,0,0.12)',
+                              boxShadow: selectedTable?.id === t.id ? '0 0 0 4px rgba(22, 101, 52, 0.3), 0 8px 24px rgba(0,0,0,0.2)' : '0 6px 18px rgba(0,0,0,0.12)',
                               backgroundColor: statusColor(s),
                               display: 'flex',
                               alignItems: 'center',
@@ -542,67 +569,83 @@ const MenuSection = () => {
                     </div>
 
                     {/* Legend */}
-                    <div className="mt-4 bg-gray-50 rounded-xl p-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Legenda Status Meja</h4>
+                    <div className="mt-4 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-green-800" />
+                        Legenda Status Meja
+                      </h4>
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="flex items-center gap-2">
-                          <span style={{ width: 14, height: 14, background: statusColor('free'), borderRadius: 6 }} />
-                          <span className="text-xs text-gray-600">Tersedia</span>
+                        <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
+                          <span style={{ width: 16, height: 16, background: statusColor('free'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <div>
+                            <div className="text-xs font-medium text-gray-900">Tersedia</div>
+                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'free').length} meja</div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span style={{ width: 14, height: 14, background: statusColor('reserved'), borderRadius: 6 }} />
-                          <span className="text-xs text-gray-600">Dipesan</span>
+                        <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
+                          <span style={{ width: 16, height: 16, background: statusColor('reserved'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <div>
+                            <div className="text-xs font-medium text-gray-900">Dipesan</div>
+                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'reserved').length} meja</div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span style={{ width: 14, height: 14, background: statusColor('occupied'), borderRadius: 6 }} />
-                          <span className="text-xs text-gray-600">Terisi</span>
+                        <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
+                          <span style={{ width: 16, height: 16, background: statusColor('occupied'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <div>
+                            <div className="text-xs font-medium text-gray-900">Terisi</div>
+                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'occupied').length} meja</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Info & Confirmation Section */}
+                  {/* Info Section */}
                   <div className="space-y-4">
                     {/* Selected Table Info */}
                     {selectedTable ? (
-                      <div className="bg-green-50 border-2 border-green-800 rounded-xl p-4">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-600 rounded-xl p-4 shadow-lg animate-bounceIn">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-5 h-5 text-green-800" />
-                            <h4 className="font-semibold text-green-900">Meja Dipilih</h4>
+                            <div className="bg-green-800 p-2 rounded-lg">
+                              <MapPin className="w-5 h-5 text-white" />
+                            </div>
+                            <h4 className="font-bold text-green-900">Meja Dipilih</h4>
                           </div>
-                          <Check className="w-5 h-5 text-green-800" />
+                          <Check className="w-6 h-6 text-green-800 bg-white rounded-full p-1" />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 bg-white/80 rounded-lg p-3">
                           <div className="text-sm text-gray-700">
-                            <span className="font-medium">{selectedTable.label}</span>
+                            <span className="font-semibold text-green-900">{selectedTable.label}</span>
                           </div>
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              <span>{selectedTable.seats} kursi</span>
+                              <Users className="w-4 h-4 text-green-700" />
+                              <span className="font-medium">{selectedTable.seats} kursi</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{selectedTable.area}</span>
+                              <MapPin className="w-4 h-4 text-green-700" />
+                              <span className="font-medium">{selectedTable.area}</span>
                             </div>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 text-center">
-                        <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">Belum ada meja dipilih</p>
+                      <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                        <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <MapPin className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-600">Belum ada meja dipilih</p>
                         <p className="text-xs text-gray-400 mt-1">Klik meja hijau pada denah</p>
                       </div>
                     )}
 
                     {/* Order Summary */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">Ringkasan Pesanan</h4>
+                    <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm">
+                      <h4 className="font-bold text-gray-900 mb-3">Ringkasan Pesanan</h4>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                         {cart.map((item) => (
-                          <div key={item.name} className="flex justify-between text-sm">
+                          <div key={item.name} className="flex justify-between text-sm py-2 border-b border-gray-100">
                             <span className="text-gray-600">
                               {item.name} <span className="text-gray-400">x{item.quantity}</span>
                             </span>
@@ -612,9 +655,9 @@ const MenuSection = () => {
                           </div>
                         ))}
                       </div>
-                      <div className="border-t border-gray-200 mt-3 pt-3">
+                      <div className="border-t-2 border-green-200 mt-3 pt-3 bg-green-50 rounded-lg p-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-gray-900">Total</span>
+                          <span className="font-bold text-gray-900">Total Pembayaran</span>
                           <span className="text-xl font-bold text-green-800">
                             Rp {getTotalPrice().toLocaleString('id-ID')}
                           </span>
@@ -623,32 +666,48 @@ const MenuSection = () => {
                     </div>
 
                     {/* Available Tables List */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">
-                        Meja Tersedia ({availableTables.length})
+                    <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm">
+                      <h4 className="font-bold text-gray-900 mb-3 flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Users className="w-5 h-5 text-green-800" />
+                          Meja Tersedia
+                        </span>
+                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full">
+                          {availableTables.length}
+                        </span>
                       </h4>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {availableTables.map((table) => (
-                          <button
-                            key={table.id}
-                            onClick={() => setSelectedTable(table)}
-                            className={`w-full text-left p-3 rounded-lg border transition-all ${
-                              selectedTable?.id === table.id
-                                ? 'border-green-800 bg-green-50'
-                                : 'border-gray-200 hover:border-green-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">{table.label}</div>
-                                <div className="text-xs text-gray-500">{table.seats} kursi • {table.area}</div>
+                        {availableTables.length > 0 ? (
+                          availableTables.map((table) => (
+                            <button
+                              key={table.id}
+                              onClick={() => setSelectedTable(table)}
+                              className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                                selectedTable?.id === table.id
+                                  ? 'border-green-800 bg-green-50 shadow-md'
+                                  : 'border-gray-200 hover:border-green-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold text-gray-900">{table.label}</div>
+                                  <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                                    <span>{table.seats} kursi</span>
+                                    <span>•</span>
+                                    <span>{table.area}</span>
+                                  </div>
+                                </div>
+                                {selectedTable?.id === table.id && (
+                                  <Check className="w-5 h-5 text-green-800 bg-green-100 rounded-full p-1" />
+                                )}
                               </div>
-                              {selectedTable?.id === table.id && (
-                                <Check className="w-5 h-5 text-green-800" />
-                              )}
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-gray-500 text-sm">
+                            Tidak ada meja tersedia
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -656,12 +715,13 @@ const MenuSection = () => {
                     <button
                       onClick={confirmBooking}
                       disabled={!selectedTable}
-                      className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      className={`w-full py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
                         selectedTable
-                          ? 'bg-green-800 hover:bg-green-900 text-white hover:shadow-lg'
+                          ? 'bg-gradient-to-r from-green-800 to-green-700 hover:from-green-900 hover:to-green-800 text-white shadow-lg hover:shadow-xl hover:scale-105'
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                     >
+                      <Check className="w-5 h-5" />
                       {selectedTable ? 'Konfirmasi Pesanan' : 'Pilih Meja Terlebih Dahulu'}
                     </button>
                   </div>
@@ -675,8 +735,8 @@ const MenuSection = () => {
       {/* Confirmation Success Modal */}
       {showConfirmation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl max-w-md w-full p-8 shadow-xl z-10 text-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fadeIn" />
+          <div className="relative bg-white rounded-2xl max-w-md w-full p-8 shadow-xl z-10 text-center animate-slideUp">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-800" />
             </div>
