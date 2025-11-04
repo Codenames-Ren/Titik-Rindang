@@ -1,26 +1,28 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
 	"titik-rindang/src/database"
+	"titik-rindang/src/helper"
 	"titik-rindang/src/models"
 	"titik-rindang/src/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Create Reservation
 func CreateReservation(c *gin.Context) {
 	var input struct {
-		Name            string  `json:"name" binding:"required"`
-		Phone           string  `json:"phone" binding:"required"`
-		Email           string  `json:"email"`
-		TableID         uint    `json:"table_id" binding:"required"`
-		ReservationDate string  `json:"reservation_date" binding:"required"`
-		TableFee        float64 `json:"table_fee" binding:"required"`
+		Name            string `json:"name" binding:"required"`
+		Phone           string `json:"phone" binding:"required"`
+		Email           string `json:"email" binding:"required,email"`
+		TableID         uint   `json:"table_id" binding:"required"`
+		ReservationDate string `json:"reservation_date" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -40,13 +42,12 @@ func CreateReservation(c *gin.Context) {
 		Email:           input.Email,
 		TableID:         input.TableID,
 		ReservationDate: resDate,
-		TableFee:        input.TableFee,
-		Status:          "pending",
+		Status: "Unpaid",
 	}
 
 	svc := services.NewReservationService(database.DB)
 	if err := svc.CreateReservation(&reservation); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to create reservation"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "Table not available, failed to create reservations"})
 		return
 	}
 
@@ -54,6 +55,94 @@ func CreateReservation(c *gin.Context) {
 		"status":  "success",
 		"message": "reservation created successfully",
 		"data":    reservation,
+	})
+}
+
+//Confirm Reservation
+func ConfirmReservation(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "invalid reservation ID",
+		})
+		return
+	}
+
+	svc := services.NewReservationService(database.DB)
+	reservation, err := svc.GetReservationByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "reservation not found",
+		})
+		return
+	}
+
+	// Update status reservation to "paid"
+	reservation.Status = "Paid"
+	if err := database.DB.Save(reservation).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "failed to confirm reservation",
+		})
+		return
+	}
+
+	var invoice models.Invoice
+	err = database.DB.Where("reservation_id = ?", reservation.ID).First(&invoice).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			invoiceSvc := services.NewInvoiceService(database.DB)
+			newInvoice, err := invoiceSvc.CreateInvoice(reservation)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status":  "error",
+					"message": "failed to create invoice",
+				})
+				return
+			}
+			invoice = *newInvoice
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "failed to fetch invoice data",
+			})
+			return
+		}
+	}
+
+	invoice.PaymentMethod = "Paid"
+	if err := database.DB.Save(&invoice).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "failed to update invoice status",
+		})
+		return
+	}
+
+
+	if err := helper.SendInvoiceEmail(reservation.Email, &invoice); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "reservation confirmed, but failed to send invoice email",
+			"data": gin.H{
+				"reservation": reservation,
+				"invoice":     invoice,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "reservation confirmed & invoice sent successfully",
+		"data": gin.H{
+			"reservation": reservation,
+			"invoice":     invoice,
+		},
 	})
 }
 

@@ -10,4 +10,5 @@ type Invoice struct {
 	AmountPaid     float64     `gorm:"not null"`
 	PaymentMethod  string      `gorm:"type:varchar(50)"`
 	CreatedAt      time.Time
+	UpdatedAt	   time.Time
 }

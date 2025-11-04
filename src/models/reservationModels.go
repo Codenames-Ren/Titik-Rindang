@@ -11,7 +11,7 @@ type Reservation struct {
 	Table            Table     `gorm:"foreignKey:TableID"`
 	ReservationDate  time.Time `gorm:"not null"`
 	TableFee         float64   `gorm:"not null"`
-	Status           string    `gorm:"type:varchar(20);default:'pending'"` // pending, paid, cancelled
+	Status           string    `gorm:"type:varchar(20);default:'Unpaid'"` // Unpaid, Paid, Cancelled
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }

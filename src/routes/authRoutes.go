@@ -41,8 +41,8 @@ func AuthRoutes(router *gin.Engine) {
 	//admin
 	AdminGroup := router.Group("/admin", middlewares.AuthMiddleware(), middlewares.AdminMiddleware())
 	{
-		//Endpoint for Register
-		AdminGroup.POST("/register", controllers.Register)
+		
+		AdminGroup.POST("/register", controllers.Register) //Endpoint for Register
 		AdminGroup.GET("/users", controllers.GetAllUsers)
 		AdminGroup.GET("/users/:id", controllers.GetAllUsersById)
 		AdminGroup.PUT("/users/:id", controllers.UpdateUser)

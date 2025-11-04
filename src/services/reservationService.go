@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"titik-rindang/src/helper"
 	"titik-rindang/src/models"
 
 	"gorm.io/gorm"
@@ -19,12 +20,10 @@ func NewReservationService(db *gorm.DB) *ReservationService {
 
 // Create Reservation
 func (s *ReservationService) CreateReservation(reservation *models.Reservation) error {
-	// Set default status
-	reservation.Status = "pending"
+	reservation.Status = "Unpaid"
 	reservation.CreatedAt = time.Now()
 	reservation.UpdatedAt = time.Now()
 
-	// Pastikan meja masih available
 	var table models.Table
 	if err := s.DB.First(&table, reservation.TableID).Error; err != nil {
 		return errors.New("table not found")
@@ -33,13 +32,18 @@ func (s *ReservationService) CreateReservation(reservation *models.Reservation) 
 		return errors.New("table is not available")
 	}
 
-	// Tandai meja jadi booked
+	reservation.TableFee = helper.GetReservationFee()
+
 	table.Status = "booked"
 	if err := s.DB.Save(&table).Error; err != nil {
 		return err
 	}
 
-	return s.DB.Create(reservation).Error
+	if err := s.DB.Create(reservation).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get All Reservations
@@ -69,11 +73,10 @@ func (s *ReservationService) UpdateReservation(id uint, updatedData *models.Rese
 		return nil, err
 	}
 
-	// Update status jika ada
 	if updatedData.Status != "" {
 		reservation.Status = updatedData.Status
 
-		// Jika reservation completed/cancelled, meja harus available lagi
+		// if reservations completed/cancelled, table must available
 		if updatedData.Status == "completed" || updatedData.Status == "cancelled" {
 			var table models.Table
 			if err := s.DB.First(&table, reservation.TableID).Error; err == nil {
@@ -83,7 +86,7 @@ func (s *ReservationService) UpdateReservation(id uint, updatedData *models.Rese
 		}
 	}
 
-	// Update meja jika dipindah
+	// Update table if moved
 	if updatedData.TableID != 0 && updatedData.TableID != reservation.TableID {
 		var newTable models.Table
 		if err := s.DB.First(&newTable, updatedData.TableID).Error; err != nil {
@@ -115,11 +118,13 @@ func (s *ReservationService) UpdateReservation(id uint, updatedData *models.Rese
 
 // Delete Reservation
 func (s *ReservationService) DeleteReservation(id uint) error {
-	// Delete juga harus buka meja lagi
+	// Pastikan reservation ada
 	reservation, err := s.GetReservationByID(id)
 	if err != nil {
 		return err
 	}
+
+	s.DB.Where("reservation_id = ?", reservation.ID).Delete(&models.Invoice{})
 
 	var table models.Table
 	if err := s.DB.First(&table, reservation.TableID).Error; err == nil {
@@ -133,3 +138,4 @@ func (s *ReservationService) DeleteReservation(id uint) error {
 	}
 	return result.Error
 }
+

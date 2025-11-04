@@ -2,13 +2,17 @@ package routes
 
 import (
 	"titik-rindang/src/controllers"
+	"titik-rindang/src/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func MenuRoutes(router *gin.Engine) {
-	reservation := router.Group("/menu")
+	menu := router.Group("/menu")
 
-	reservation.GET("/", controllers.GetAllMenu)
-	reservation.POST("/", controllers.CreateMenu)
+	menu.GET("/", controllers.GetAllMenu)
+	menu.GET("/:id", controllers.GetMenuByID)
+	menu.POST("/", middlewares.AuthMiddleware(), controllers.CreateMenu)
+	menu.PUT("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.UpdateMenu)
+	menu.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteMenu)
 }

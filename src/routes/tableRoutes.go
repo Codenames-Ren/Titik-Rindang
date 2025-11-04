@@ -2,13 +2,17 @@ package routes
 
 import (
 	"titik-rindang/src/controllers"
+	"titik-rindang/src/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func TableRoutes(router *gin.Engine) {
-	reservation := router.Group("/table")
+	table := router.Group("/table")
 
-	reservation.GET("/", controllers.GetAllTables)
-	reservation.POST("/", controllers.CreateTable)
+	table.GET("/", controllers.GetAllTables)
+	table.GET("/:id", controllers.GetTableByID)
+	table.POST("/", middlewares.AuthMiddleware(), controllers.CreateTable)
+	table.PUT("/:id", middlewares.AuthMiddleware(), middlewares.CashierMiddleware(), controllers.UpdateTable)
+	table.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteTable)
 }
