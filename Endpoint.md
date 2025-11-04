@@ -30,3 +30,5 @@ List Endpoint :
 - /admin/dashboard - Method get, kalo gak dipake gak masalah, cuma buat cek username adminnya siapa.
 
 \*Akan segera dilengkapi seiring berjalannya project ini.
+
+//Ada Update di logic reservations tapi dokumentasinya nyusul ntar
