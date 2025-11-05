@@ -95,11 +95,125 @@ Hanya bisa diakses oleh **admin**.
 
 **Method:** `POST`, `GET`
 
+Endpoint ini digunakan untuk **pengelolaan dan pemilihan meja** baik oleh pelanggan umum maupun user internal.  
+Endpoint **tanpa middleware** bersifat **public** dan digunakan untuk **melihat daftar meja yang tersedia** serta **memilih nomor meja** pada saat reservasi atau dine-in.  
+Sementara endpoint dengan middleware hanya dapat diakses oleh **user internal** yang sudah login sesuai rolenya.
+
+---
+
+#### 🔹 `GET /table/`
+
+**Deskripsi:**  
+Menampilkan semua data meja yang tersedia (termasuk yang sedang digunakan).  
+Digunakan oleh frontend untuk menampilkan daftar meja kepada pelanggan saat melakukan pemesanan (reservasi/dine-in).
+
+**Akses:** Public (tanpa login)
+
+---
+
+#### 🔹 `GET /table/:id`
+
+**Deskripsi:**  
+Mengambil detail satu meja berdasarkan ID-nya (misalnya nomor meja atau kode meja tertentu).  
+Digunakan untuk menampilkan informasi spesifik meja yang dipilih customer.
+
+**Akses:** Public (tanpa login)
+
+---
+
+#### 🔹 `POST /table/`
+
+**Deskripsi:**  
+Menambahkan data meja baru ke dalam sistem.  
+Biasanya dilakukan oleh **user internal** (staff/admin) untuk menambah daftar meja di sistem.
+
+**Akses:** Login Required (`AuthMiddleware()`)  
+**Role:** Admin, Staff
+
+---
+
+#### 🔹 `PUT /table/:id`
+
+**Deskripsi:**  
+Memperbarui data meja, seperti status meja (tersedia, terisi, dibersihkan, dsb).  
+Biasanya dilakukan oleh **kasir** atau staff yang bertanggung jawab terhadap meja.
+
+**Akses:** Login Required (`AuthMiddleware()`, `CashierMiddleware()`)  
+**Role:** Cashier only
+
+---
+
+#### 🔹 `DELETE /table/:id`
+
+**Deskripsi:**  
+Menghapus (soft delete) data meja dari sistem.  
+Biasanya digunakan oleh **admin** untuk manajemen data meja yang sudah tidak aktif digunakan.
+
+**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Role:** Admin only
+
 ---
 
 ### 📋 /menu
 
 **Method:** `POST`, `GET`
+
+Endpoint ini digunakan untuk **pengelolaan menu makanan dan minuman** di sistem.  
+Endpoint **tanpa middleware** bersifat **public**, karena customer perlu bisa **melihat daftar menu yang tersedia** dan **memilih menu** saat melakukan pemesanan (dine-in via website).  
+Endpoint dengan middleware hanya dapat diakses oleh **user internal dengan role admin**, karena hanya admin yang berwenang untuk menambah, mengubah, atau menghapus menu.
+
+---
+
+#### 🔹 `GET /menu/`
+
+**Deskripsi:**  
+Menampilkan semua menu yang tersedia di database.  
+Digunakan oleh frontend agar pelanggan bisa melihat daftar makanan dan minuman yang tersedia di restoran.
+
+**Akses:** Public (tanpa login)
+
+---
+
+#### 🔹 `GET /menu/:id`
+
+**Deskripsi:**  
+Mengambil detail satu menu berdasarkan ID-nya.  
+Digunakan untuk menampilkan detail menu tertentu (misalnya deskripsi, harga, gambar, kategori, dll).
+
+**Akses:** Public (tanpa login)
+
+---
+
+#### 🔹 `POST /menu/`
+
+**Deskripsi:**  
+Menambahkan menu baru ke dalam sistem.  
+Hanya **admin** yang dapat menambah menu, karena menu baru biasanya dibuat lewat dashboard admin.
+
+**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Role:** Admin only
+
+---
+
+#### 🔹 `PUT /menu/:id`
+
+**Deskripsi:**  
+Memperbarui data menu (seperti harga, stok, kategori, atau deskripsi).  
+Biasanya digunakan untuk update menu yang sudah ada.
+
+**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Role:** Admin only
+
+---
+
+#### 🔹 `DELETE /menu/:id`
+
+**Deskripsi:**  
+Menghapus (soft delete) menu dari sistem.  
+Digunakan oleh **admin** jika ada menu yang sudah tidak dijual atau perlu diarsipkan.
+
+**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Role:** Admin only
 
 ---
 
@@ -134,4 +248,5 @@ Untuk mengakses endpoint ini, role yang login **wajib admin**.
 > 🧩 **Catatan:**  
 > Dokumentasi ini akan terus dilengkapi seiring berjalannya pengembangan project.
 
-> Buka langsung di github biar baca dokumentasi ini lebih enak.
+> 📘 **Tips:**  
+> Buka langsung di GitHub biar baca dokumentasi ini lebih enak.

@@ -12,7 +12,7 @@ func MenuRoutes(router *gin.Engine) {
 
 	menu.GET("/", controllers.GetAllMenu)
 	menu.GET("/:id", controllers.GetMenuByID)
-	menu.POST("/", middlewares.AuthMiddleware(), controllers.CreateMenu)
+	menu.POST("/", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.CreateMenu)
 	menu.PUT("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.UpdateMenu)
 	menu.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteMenu)
 }
