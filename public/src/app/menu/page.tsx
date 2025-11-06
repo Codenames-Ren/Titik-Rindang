@@ -1,5 +1,6 @@
 import React from "react";
-import MenuSection from "@/components/MenuSection";
+import MenuSection from "@/components/AdminMenuSection";
+import AdminMenuSection from "@/components/AdminMenuSection";
 
 export const metadata = {
   title: "Tentang Kami - Titik Rindang",
@@ -9,7 +10,7 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-gray-50">
-      <MenuSection />
+      <AdminMenuSection />
     </main>
   );
 }

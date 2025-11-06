@@ -41,11 +41,13 @@ const Login = () => {
 
         // 5. Cek role dari respon backend
         if (data.role === 'admin') {
-          // Login sukses & role adalah admin → redirect
           router.push('/admin');
+        } else if (data.role === 'staff') {
+          router.push('/staff');
+        } else if (data.role === 'cashier') {
+          router.push('/cashier');
         } else {
-          // Login sukses tapi bukan admin
-          setError('Anda berhasil login, tetapi bukan admin.');
+          setError('Role tidak dikenali, hubungi admin.');
         }
 
       } else {

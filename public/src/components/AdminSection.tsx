@@ -1,16 +1,130 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Coffee, Plus, Trash2, Users, Table2, Edit, Image, Menu, X, LogOut, Settings, BarChart3 } from 'lucide-react';
+
+function UserRegisterForm() {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('staff');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setMessage('');
+  setLoading(true);
+
+  // Ambil ulang token dari localStorage untuk pastiin nilainya up-to-date
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    setMessage('❌ Token tidak ditemukan. Silakan login ulang sebagai admin.');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:8080/admin/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        role,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // kalau backend kirim pesan “invalid token”, tampilkan khusus
+      if (res.status === 401) {
+        throw new Error('Token tidak valid atau kadaluwarsa. Silakan login ulang.');
+      }
+      throw new Error(data.error || 'Gagal menambahkan user baru.');
+    }
+
+    setMessage('✅ User berhasil ditambahkan!');
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setRole('staff');
+  } catch (err: any) {
+    console.error('❌ Error register:', err);
+    setMessage(`❌ ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+          required
+        />
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+        >
+          <option value="staff">Staff</option>
+          <option value="cashier">Cashier</option>
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all disabled:bg-gray-400"
+      >
+        {loading ? 'Menyimpan...' : 'Tambah User'}
+      </button>
+
+      {message && <p className="text-sm font-medium mt-2">{message}</p>}
+    </form>
+  );
+}
+
 
 type TableStatus = 'available' | 'booked' | 'in_used';
 
 interface MenuItem {
   id: number;
   name: string;
-  price: string;
-  category: string;
-  image?: string;
+  tagline?: string;
+  imageURL?: string;
+  price: number;
 }
+
 
 interface User {
   id: number;
@@ -28,9 +142,58 @@ export default function AdminSection() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // ===== MENU MANAGEMENT =====
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [newItem, setNewItem] = useState({ name: '', price: '', category: '', image: '' });
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  interface NewMenuItem {
+  name: string;
+  tagline: string;
+  price: string;
+  category?: string;
+  imageURL: string | File;
+}
+
+const [newItem, setNewItem] = useState<NewMenuItem>({
+  name: '',
+  tagline: '',
+  price: '',
+  category: '',
+  imageURL: '',
+});
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
+  useEffect(() => {
+  fetch("http://localhost:8080/menu/")
+    .then((res) => res.json())
+    .then((data) => {
+      // Debug dulu
+      console.log("📦 Data dari backend:", data);
+
+      const rawMenus = Array.isArray(data)
+        ? data
+        : Array.isArray(data.data)
+        ? data.data
+        : [];
+
+      // 🧩 Normalisasi field agar sesuai dengan frontend
+      const formatted = rawMenus.map((item: any) => ({
+        id: item.ID,
+        name: item.Name,
+        tagline: item.Tagline,
+        imageURL: item.ImageURL
+          ? item.ImageURL.startsWith("http")
+            ? item.ImageURL
+            : `http://localhost:8080${item.ImageURL}`
+          : "", // handle null
+        price: item.Price || 0,
+      }));
+
+      setMenus(formatted);
+    })
+    .catch((err) => console.error("❌ Gagal fetch menu:", err));
+}, []);
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,36 +202,132 @@ export default function AdminSection() {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (editingItem) {
-        setEditingItem({ ...editingItem, image: reader.result as string });
+        setEditingItem({ ...editingItem, imageURL: reader.result as string });
       } else {
-        setNewItem({ ...newItem, image: reader.result as string });
+        setNewItem({ ...newItem, imageURL: reader.result as string });
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const addMenuItem = () => {
-    if (!newItem.name || !newItem.price || !newItem.category)
-      return alert('Lengkapi semua field!');
-    const updated = [...menuItems, { id: Date.now(), ...newItem }];
-    setMenuItems(updated);
-    setNewItem({ name: '', price: '', category: '', image: '' });
-  };
+  const addMenuItem = async () => {
+  if (!newItem.name || !newItem.price) {
+    alert('Lengkapi semua field!');
+    return;
+  }
 
-  const updateMenuItem = () => {
-    if (!editingItem) return;
-    const updated = menuItems.map(item => 
-      item.id === editingItem.id ? editingItem : item
-    );
-    setMenuItems(updated);
-    setEditingItem(null);
-  };
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Kamu belum login sebagai admin.');
+    return;
+  }
 
-  const deleteMenuItem = (id: number) => {
-    if (confirm('Yakin ingin menghapus menu ini?')) {
-      setMenuItems(menuItems.filter((i) => i.id !== id));
+  try {
+    const res = await fetch('http://localhost:8080/menu/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: newItem.name,
+        tagline: newItem.tagline || '',
+        price: parseFloat(newItem.price),
+        image_url: typeof newItem.imageURL === 'string' ? newItem.imageURL : '',
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Gagal menambahkan menu.');
     }
-  };
+
+    alert('✅ Menu berhasil ditambahkan!');
+    const updated = await res.json();
+
+// ✅ Normalisasi data biar gak undefined dan tetap sesuai format frontend
+const newMenu = {
+  id: updated.data?.ID || updated.data?.id,
+  name: updated.data?.Name || updated.data?.name || '',
+  tagline: updated.data?.Tagline || updated.data?.tagline || '',
+  imageURL: updated.data?.ImageURL
+    ? updated.data.ImageURL.startsWith('http')
+      ? updated.data.ImageURL
+      : `http://localhost:8080${updated.data.ImageURL}`
+    : '',
+  price: updated.data?.Price || updated.data?.price || 0,
+};
+
+// Tambahkan ke list menu
+setMenus((prev) => [...prev, newMenu]);
+setNewItem({ name: '', tagline: '', price: '', imageURL: '', category: '' });
+
+    setNewItem({ name: '', tagline: '', price: '', imageURL: '', category: '' });
+  } catch (err) {
+    console.error(err);
+    alert('❌ Gagal menambahkan menu. Pastikan backend menerima JSON.');
+  }
+};
+
+
+
+
+const updateMenuItem = async (id: number, updatedMenu: any) => {
+  try {
+    const res = await fetch(`http://localhost:8080/menu/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedMenu),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Gagal update menu.');
+
+    // ✅ update list menus tanpa ganti bentuk state
+    setMenus((prevMenus) =>
+      prevMenus.map((m) =>
+        m.id === id
+          ? {
+              ...m,
+              name: data.data?.Name || m.name,
+              tagline: data.data?.Tagline || m.tagline,
+              imageURL: data.data?.ImageURL || m.imageURL,
+              price: data.data?.Price || m.price,
+            }
+          : m
+      )
+    );
+
+    alert('✅ Menu berhasil diupdate!');
+  } catch (err) {
+    console.error('❌ Gagal update menu:', err);
+    alert('Gagal update menu');
+  }
+};
+
+
+
+  const deleteMenuItem = async (id: number) => {
+  if (!confirm('Yakin ingin menghapus menu ini?')) return;
+
+  try {
+    const res = await fetch(`http://localhost:8080/menu/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Gagal hapus menu');
+    alert('✅ Menu berhasil dihapus!');
+    setMenus(menus.filter((m) => m.id !== id));
+  } catch (err) {
+    console.error(err);
+    alert('❌ Gagal hapus menu.');
+  }
+};
+
 
   // ===== USER MANAGEMENT =====
   const [users, setUsers] = useState<User[]>([
@@ -198,7 +457,7 @@ export default function AdminSection() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-blue-100 text-sm">Total Menu</p>
-                      <h3 className="text-4xl font-bold mt-2">{menuItems.length}</h3>
+                      <h3 className="text-4xl font-bold mt-2">{menus.length}</h3>
                     </div>
                     <Coffee size={40} className="opacity-80" />
                   </div>
@@ -288,17 +547,17 @@ export default function AdminSection() {
                     placeholder="Harga (contoh: 25000)"
                     value={editingItem ? editingItem.price : newItem.price}
                     onChange={(e) => editingItem
-                      ? setEditingItem({...editingItem, price: e.target.value})
+                      ? setEditingItem({ ...editingItem, price: parseFloat(e.target.value)})
                       : setNewItem({ ...newItem, price: e.target.value })}
                     className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Kategori (contoh: Minuman)"
-                    value={editingItem ? editingItem.category : newItem.category}
+                    value={editingItem ? editingItem.tagline : newItem.tagline}
                     onChange={(e) => editingItem
-                      ? setEditingItem({...editingItem, category: e.target.value})
-                      : setNewItem({ ...newItem, category: e.target.value })}
+                      ? setEditingItem({...editingItem, tagline: e.target.value})
+                      : setNewItem({ ...newItem, tagline: e.target.value })}
                     className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
                   <label className="border-2 border-dashed border-gray-300 rounded-xl p-3 flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
@@ -307,11 +566,11 @@ export default function AdminSection() {
                   </label>
                 </div>
 
-                {(newItem.image || editingItem?.image) && (
+                {(newItem.imageURL || editingItem?.imageURL) && (
                   <div className="mt-4">
                     <p className="text-sm text-gray-600 mb-2">Preview:</p>
                     <img
-                      src={editingItem ? editingItem.image : newItem.image}
+                      src={editingItem ? editingItem.imageURL : newItem.imageURL}
                       alt="preview"
                       className="w-40 h-40 object-cover rounded-xl border-4 border-gray-200"
                     />
@@ -320,11 +579,18 @@ export default function AdminSection() {
 
                 <div className="mt-6 flex gap-3">
                   <button
-                    onClick={editingItem ? updateMenuItem : addMenuItem}
+                    onClick={() => {
+                      if (editingItem) {
+                        updateMenuItem(editingItem.id, editingItem); // ✅ panggil dengan argumen
+                      } else {
+                        addMenuItem(); // ✅ panggil fungsi tambah menu
+                      }
+                    }}
                     className="bg-emerald-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg"
                   >
                     <Plus size={18} /> {editingItem ? 'Update Menu' : 'Tambah Menu'}
                   </button>
+
                   {editingItem && (
                     <button
                       onClick={() => setEditingItem(null)}
@@ -338,48 +604,55 @@ export default function AdminSection() {
 
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Daftar Menu</h3>
-                {menuItems.length === 0 ? (
+                {menus.length === 0 ? (
                   <div className="text-center py-12">
                     <Coffee size={48} className="mx-auto text-gray-300 mb-4" />
                     <p className="text-gray-500">Belum ada menu. Tambahkan menu pertama Anda!</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {menuItems.map((item) => (
-                      <div key={item.id} className="border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all group">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                            <Coffee size={48} className="text-gray-400" />
-                          </div>
-                        )}
-                        <div className="p-4">
-                          <h4 className="font-bold text-gray-800 text-lg">{item.name}</h4>
-                          <p className="text-emerald-600 font-semibold text-xl mt-1">Rp {item.price}</p>
-                          <p className="text-gray-500 text-sm mt-1">{item.category}</p>
-                          <div className="flex gap-2 mt-4">
-                            <button
-                              onClick={() => setEditingItem(item)}
-                              className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-1"
-                            >
-                              <Edit size={16} /> Edit
-                            </button>
-                            <button
-                              onClick={() => deleteMenuItem(item.id)}
-                              className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-all flex items-center justify-center gap-1"
-                            >
-                              <Trash2 size={16} /> Hapus
-                            </button>
-                          </div>
-                        </div>
+                {menus.map((item) => (
+                  <div
+                    key={item.id ? `menu-${item.id}` : `temp-${item.name}-${Math.random()}`}
+                    className="border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all group"
+                  >
+                    {item.imageURL ? (
+                      <img
+                        src={item.imageURL}
+                        alt={item.name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <Coffee size={48} className="text-gray-400" />
                       </div>
-                    ))}
+                    )}
+
+                    <div className="p-4">
+                      <h4 className="font-bold text-gray-800 text-lg">{item.name}</h4>
+                      <p className="text-gray-500 text-sm mt-1">{item.tagline}</p>
+                      <p className="text-emerald-700 font-semibold text-lg mt-2">
+                        Rp {item.price.toLocaleString('id-ID')}
+                      </p>
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => setEditingItem(item)}
+                          className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-1"
+                        >
+                          <Edit size={16} /> Edit
+                        </button>
+                        <button
+                          onClick={() => deleteMenuItem(item.id)}
+                          className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-all flex items-center justify-center gap-1"
+                        >
+                          <Trash2 size={16} /> Hapus
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+
                 )}
               </div>
             </div>
@@ -387,48 +660,67 @@ export default function AdminSection() {
 
           {/* ===== USER MANAGEMENT ===== */}
           {activeTab === 'user' && (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
-                    <tr>
-                      <th className="p-4 text-left font-semibold">ID</th>
-                      <th className="p-4 text-left font-semibold">Username</th>
-                      <th className="p-4 text-left font-semibold">Role</th>
-                      <th className="p-4 text-center font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user, index) => (
-                      <tr key={user.id} className={`border-b ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-emerald-50 transition-colors`}>
-                        <td className="p-4 text-gray-700">{user.id}</td>
-                        <td className="p-4 text-gray-800 font-medium">{user.username}</td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            user.role === 'Admin' 
-                              ? 'bg-purple-100 text-purple-700' 
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="p-4 text-center">
-                          {user.role !== 'Admin' && (
-                            <button
-                              onClick={() => deleteUser(user.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </td>
+            <div className="space-y-6">
+              {/* === FORM TAMBAH USER === */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Tambah User Baru</h3>
+                <UserRegisterForm />
+              </div>
+
+              {/* === TABEL USER === */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
+                      <tr>
+                        <th className="p-4 text-left font-semibold">ID</th>
+                        <th className="p-4 text-left font-semibold">Username</th>
+                        <th className="p-4 text-left font-semibold">Role</th>
+                        <th className="p-4 text-center font-semibold">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {users.map((user, index) => (
+                        <tr
+                          key={user.id}
+                          className={`border-b ${
+                            index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                          } hover:bg-emerald-50 transition-colors`}
+                        >
+                          <td className="p-4 text-gray-700">{user.id}</td>
+                          <td className="p-4 text-gray-800 font-medium">{user.username}</td>
+                          <td className="p-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                user.role === 'Admin'
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : user.role === 'staff'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}
+                            >
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            {user.role !== 'Admin' && (
+                              <button
+                                onClick={() => deleteUser(user.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
+
 
           {/* ===== TABLE STATUS ===== */}
           {activeTab === 'table' && (
