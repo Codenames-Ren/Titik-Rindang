@@ -702,15 +702,20 @@ const getStatusText = (status: TableStatus) =>
                       : setNewItem({ ...newItem, price: e.target.value })}
                     className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
-                  <input
-                    type="text"
-                    placeholder="Kategori (contoh: Minuman)"
+                  <select
                     value={editingItem ? editingItem.tagline : newItem.tagline}
-                    onChange={(e) => editingItem
-                      ? setEditingItem({...editingItem, tagline: e.target.value})
-                      : setNewItem({ ...newItem, tagline: e.target.value })}
+                    onChange={(e) =>
+                      editingItem
+                        ? setEditingItem({ ...editingItem, tagline: e.target.value })
+                        : setNewItem({ ...newItem, tagline: e.target.value })
+                    }
                     className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-                  />
+                  >
+                    <option value="">Pilih Kategori</option>
+                    <option value="Kopi">Kopi</option>
+                    <option value="Non-Kopi">Non-Kopi</option>
+                    <option value="Makanan">Makanan</option>
+                  </select>
                   <label className="border-2 border-dashed border-gray-300 rounded-xl p-3 flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
                     <Image className="mr-2" size={18} /> Upload Gambar
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
