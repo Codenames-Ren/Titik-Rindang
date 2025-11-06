@@ -51,6 +51,8 @@ function UserRegisterForm() {
     }
 
     setMessage('✅ User berhasil ditambahkan!');
+    // Panggil event untuk refresh tabel user
+    window.dispatchEvent(new Event("userAdded"));
     setUsername('');
     setEmail('');
     setPassword('');
@@ -127,7 +129,7 @@ interface MenuItem {
 
 
 interface User {
-  id: number;
+  id: string; // sebelumnya number
   username: string;
   role: string;
 }
@@ -329,17 +331,100 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
 
 
   // ===== USER MANAGEMENT =====
-  const [users, setUsers] = useState<User[]>([
-    { id: 1, username: 'admin', role: 'Admin' },
-    { id: 2, username: 'customer01', role: 'User' },
-    { id: 3, username: 'customer02', role: 'User' },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
 
-  const deleteUser = (id: number) => {
-    if (confirm('Yakin ingin hapus user ini?')) {
-      setUsers(users.filter((u) => u.id !== id));
+    useEffect(() => {
+      if (!token) return;
+
+      fetch("http://localhost:8080/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("📦 Data user dari backend:", data);
+
+          const rawUsers = Array.isArray(data)
+            ? data
+            : Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data.users)
+            ? data.users
+            : [];
+
+          const formatted = rawUsers.map((u: any) => ({
+            id: u.ID || u.id,
+            username: u.Username || u.username,
+            role: u.Role || u.role,
+          }));
+
+          setUsers(formatted);
+        })
+        .catch((err) => console.error("❌ Gagal fetch user:", err))
+        .finally(() => setLoadingUsers(false));
+    }, [token]);
+
+    // 🟢 Tambahkan useEffect refresh di bawahnya
+    useEffect(() => {
+      const refreshUsers = () => {
+        if (!token) return;
+        fetch("http://localhost:8080/admin/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const rawUsers = Array.isArray(data)
+              ? data
+              : Array.isArray(data.data)
+              ? data.data
+              : [];
+            setUsers(
+              rawUsers.map((u: any) => ({
+                id: u.ID || u.id,
+                username: u.Username || u.username,
+                role: u.Role || u.role,
+              }))
+            );
+          });
+      };
+
+  window.addEventListener("userAdded", refreshUsers);
+  return () => window.removeEventListener("userAdded", refreshUsers);
+}, [token]);
+    
+
+  const deleteUser = async (id: string | number) => {
+  if (!confirm("🗑️ Yakin ingin menghapus user ini?")) return;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Token tidak ditemukan. Silakan login ulang sebagai admin.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`http://localhost:8080/admin/users/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Gagal menghapus user dari backend.");
     }
-  };
+
+    // Hapus di frontend state
+    setUsers((prev) => prev.filter((u) => u.id.toString() !== id.toString()));
+
+    alert("✅ User berhasil dihapus!");
+  } catch (err) {
+    console.error("❌ Error delete user:", err);
+    alert("❌ Gagal menghapus user. Coba lagi.");
+  }
+};
+
+
+
 
   // ===== TABLE MANAGEMENT =====
   const DEFAULT_TABLES: TableItem[] = [
@@ -679,40 +764,54 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((user, index) => (
-                        <tr
-                          key={user.id}
-                          className={`border-b ${
-                            index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                          } hover:bg-emerald-50 transition-colors`}
-                        >
-                          <td className="p-4 text-gray-700">{user.id}</td>
-                          <td className="p-4 text-gray-800 font-medium">{user.username}</td>
-                          <td className="p-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                user.role === 'Admin'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : user.role === 'staff'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-amber-100 text-amber-700'
-                              }`}
-                            >
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="p-4 text-center">
-                            {user.role !== 'Admin' && (
-                              <button
-                                onClick={() => deleteUser(user.id)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            )}
+                      {loadingUsers ? (
+                        <tr>
+                          <td colSpan={4} className="text-center py-6 text-gray-500">
+                            🔄 Memuat data user...
                           </td>
                         </tr>
-                      ))}
+                      ) : users.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="text-center py-6 text-gray-500">
+                            Belum ada user terdaftar.
+                          </td>
+                        </tr>
+                      ) : (
+                        users.map((user, index) => (
+                          <tr
+                            key={user.id}
+                            className={`border-b ${
+                              index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                            } hover:bg-emerald-50 transition-colors`}
+                          >
+                            <td className="p-4 text-gray-700">{user.id}</td>
+                            <td className="p-4 text-gray-800 font-medium">{user.username}</td>
+                            <td className="p-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  user.role === "admin"
+                                    ? "bg-purple-100 text-purple-700"
+                                    : user.role === "staff"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
+                                {user.role}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center">
+                              {user.role !== "admin" && (
+                                <button
+                                  onClick={() => deleteUser(user.id)} // id sudah string sekarang
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
