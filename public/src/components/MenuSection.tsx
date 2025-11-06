@@ -47,7 +47,7 @@ interface CartItem extends MenuItem {
   menu_id: number;
 }
 
-type TableStatus = "occupied" | "reserved" | "free";
+type TableStatus = "free" | "occupied" | "reserved" | "disabled";
 
 interface TableMarker {
   id: string; // front-end marker id like 'I6-1'
@@ -220,8 +220,8 @@ const MenuSection: React.FC = () => {
   // ---------- Utility / mapping functions ----------
 
   // Map backend table.status => front TableStatus
-  const mapBackendStatusToFrontend = (s: string): TableStatus => {
-    switch (s) {
+  const mapBackendStatusToFrontend = (status: string): TableStatus => {
+    switch (status) {
       case "available":
         return "free";
       case "booked":
@@ -229,20 +229,30 @@ const MenuSection: React.FC = () => {
       case "in_use":
         return "occupied";
       default:
-        return "free";
+        return "disabled"; // fallback aman
     }
   };
 
   // Try to match backend table_no to DEFAULT_TABLES by numeric suffix.
-  // e.g. DEFAULT_TABLES id 'I6-1' -> suffix 1 matches backend.table_no = 1
   const findMarkerIdForTableNo = (tableNo: number): string | null => {
-    for (const t of DEFAULT_TABLES) {
-      const parts = t.id.split("-");
-      const suffixStr = parts[parts.length - 1];
-      const suffixNum = parseInt(suffixStr, 10);
-      if (!isNaN(suffixNum) && suffixNum === tableNo) return t.id;
-    }
-    return null;
+    const map: Record<number, string> = {
+      1: "I6-1",
+      2: "I6-2",
+      3: "I6-3",
+      4: "I4-1",
+      5: "I4-2",
+      6: "I2-1",
+      7: "I2-2",
+      8: "I2-3",
+      9: "I2-4",
+      10: "I7-1",
+      11: "O4-1",
+      12: "O4-2",
+      13: "O4-3",
+      14: "O4-4",
+    };
+
+    return map[tableNo] ?? null;
   };
 
   // ---------- Fetch menu & tables ----------
@@ -270,19 +280,35 @@ const MenuSection: React.FC = () => {
         // backend returns { status, message, data }
         const raw: APIMenu[] = json?.data ?? [];
 
-        const mapped: MenuItem[] = raw.map((m) => ({
-          id: (m as any).id ?? (m as any).ID ?? 0, // ✅ kasih fallback 0 biar pasti number
-          name: (m as any).name ?? (m as any).Name ?? "",
-          price: Math.round(
-            (m as any).price || (m as any).Price || 0
-          ).toLocaleString("id-ID"),
-          description: (m as any).tagline ?? (m as any).Tagline ?? "",
-          image: (m as any).image_url
-            ? `${API_BASE}/uploads/menu/${(m as any).image_url}`
-            : (m as any).ImageURL
-            ? `${API_BASE}/uploads/menu/${(m as any).ImageURL}`
-            : "/images/placeholder.jpg",
-        }));
+        const mapped: MenuItem[] = raw.map((m) => {
+          const rawPath =
+            (m as any).image_url ??
+            (m as any).ImageURL ??
+            (m as any).image ??
+            (m as any).Image ??
+            "";
+
+          // 🧹 Bersihkan path supaya gak dobel "/src/uploads/menu/" atau "/uploads/menu/"
+          const clean = rawPath
+            .replace(/^\/?src\/uploads\/menu\//, "")
+            .replace(/^\/?uploads\/menu\//, "")
+            .trim();
+
+          // 🔗 Bangun URL final
+          const finalImage = clean.includes("/uploads/")
+            ? `${API_BASE}/${clean.replace(/^\/+/, "")}`
+            : `${API_BASE}/uploads/menu/${clean}`;
+
+          return {
+            id: (m as any).id ?? (m as any).ID ?? 0,
+            name: (m as any).name ?? (m as any).Name ?? "",
+            price: Math.round(
+              (m as any).price || (m as any).Price || 0
+            ).toLocaleString("id-ID"),
+            description: (m as any).tagline ?? (m as any).Tagline ?? "",
+            image: finalImage,
+          };
+        });
 
         setMenuItems(mapped);
       } catch (e) {
@@ -298,18 +324,32 @@ const MenuSection: React.FC = () => {
         const res = await fetch(`${API_BASE}/table/`);
         const json = await res.json();
 
-        // backend returns { message, data: [ { id, table_no, status } ] }
         const raw: BackendTable[] = json?.data ?? [];
-
         setBackendTables(raw);
 
+        if (!Array.isArray(raw) || raw.length === 0) {
+          console.warn("⚠️ Tidak ada data meja dari backend.");
+          setTableStatuses({});
+          return;
+        }
+
+        // Default semua meja disabled dulu
         const initial: Record<string, TableStatus> = {};
-        DEFAULT_TABLES.forEach((t) => (initial[t.id] = "free"));
+        DEFAULT_TABLES.forEach(
+          (t) => (initial[t.id] = "disabled" as TableStatus)
+        );
 
         for (const tb of raw) {
-          const mapped = mapBackendStatusToFrontend(tb.status);
-          const markerId = findMarkerIdForTableNo(tb.table_no);
-          if (markerId) initial[markerId] = mapped;
+          const tableNo = (tb as any).table_no ?? (tb as any).TableNo ?? null;
+          const status = (tb as any).status ?? (tb as any).Status ?? "unknown";
+
+          if (!tableNo) continue;
+
+          const markerId = findMarkerIdForTableNo(Number(tableNo));
+          if (markerId) {
+            const mapped = mapBackendStatusToFrontend(status);
+            initial[markerId] = mapped;
+          }
         }
 
         setTableStatuses(initial);
@@ -483,10 +523,15 @@ const MenuSection: React.FC = () => {
     // find backend table entry
     let backendTableId: number | null = null;
     if (!isNaN(maybeTableNo)) {
-      const backendMatch = backendTables.find(
-        (b) => b.table_no === maybeTableNo
-      );
-      if (backendMatch) backendTableId = backendMatch.id;
+      const backendMatch = backendTables.find((b) => {
+        const backendNo = (b as any).table_no ?? (b as any).TableNo;
+        return backendNo === maybeTableNo;
+      });
+
+      if (backendMatch) {
+        backendTableId =
+          (backendMatch as any).id ?? (backendMatch as any).ID ?? null;
+      }
     }
     // if not found, fallback: try to find any backend table with same status? (we won't; better require backend table)
     if (backendTableId === null) {
@@ -524,7 +569,8 @@ const MenuSection: React.FC = () => {
         throw new Error(j?.message || j?.data || JSON.stringify(j));
       }
       const created = j?.data;
-      setCurrentOrderId(created?.id ?? null);
+      setCurrentOrderId(created?.id ?? created?.ID ?? null);
+
       // After creating order, show confirmation modal that includes "Konfirmasi Pembayaran" button
       setShowPaymentModal(false);
       setShowTableSelection(false);
