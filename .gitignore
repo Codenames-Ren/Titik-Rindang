@@ -1,2 +1,3 @@
 /src/seeders/*
+/src/uploads/*
 .env

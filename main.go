@@ -51,6 +51,8 @@ func main() {
 	routes.TableRoutes(router)
 	routes.AuthRoutes(router)
 
+	router.Static("/src/uploads/menu", "./src/uploads/menu")
+
 	//Server berjalan di port 8080
 	port := os.Getenv("PORT")
 	if port == "" {
