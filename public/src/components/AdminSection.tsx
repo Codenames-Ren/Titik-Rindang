@@ -423,6 +423,49 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
   }
 };
 
+// ===== EDIT USER =====
+const [editingUser, setEditingUser] = useState<User | null>(null);
+const [editForm, setEditForm] = useState({
+  username: "",
+  email: "",
+  password: "",
+  role: "staff",
+});
+
+const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setEditForm((prev) => ({ ...prev, [name]: value }));
+};
+
+const updateUser = async (id: string) => {
+  if (!token) return alert("❌ Anda belum login sebagai admin.");
+  try {
+    const res = await fetch(`http://localhost:8080/admin/users/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(editForm),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Gagal update user.");
+
+    alert("✅ User berhasil diperbarui!");
+    setEditingUser(null);
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id
+          ? { ...u, username: editForm.username, role: editForm.role }
+          : u
+      )
+    );
+  } catch (err) {
+    console.error("❌ Error update user:", err);
+    alert("Gagal memperbarui user.");
+  }
+};
 
 
 
@@ -871,14 +914,30 @@ const getStatusText = (status: TableStatus) =>
                                 {user.role}
                               </span>
                             </td>
-                            <td className="p-4 text-center">
+                            <td className="p-4 text-center flex items-center justify-center gap-2">
                               {user.role !== "admin" && (
-                                <button
-                                  onClick={() => deleteUser(user.id)} // id sudah string sekarang
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setEditingUser(user);
+                                      setEditForm({
+                                        username: user.username,
+                                        email: "",
+                                        password: "",
+                                        role: user.role,
+                                      });
+                                    }}
+                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                                  >
+                                    <Edit size={18} />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteUser(user.id)}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+                                </>
                               )}
                             </td>
                           </tr>
@@ -888,11 +947,68 @@ const getStatusText = (status: TableStatus) =>
                   </table>
                 </div>
               </div>
+              {/* === MODAL EDIT USER === */}
+              {editingUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">Edit User</h3>
+
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        name="username"
+                        placeholder="Username"
+                        value={editForm.username}
+                        onChange={handleEditChange}
+                        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email (opsional, kosongkan jika tidak ingin ubah)"
+                        value={editForm.email}
+                        onChange={handleEditChange}
+                        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Password baru (opsional)"
+                        value={editForm.password}
+                        onChange={handleEditChange}
+                        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                      <select
+                        name="role"
+                        value={editForm.role}
+                        onChange={handleEditChange}
+                        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-emerald-500 outline-none"
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="cashier">Cashier</option>
+                      </select>
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button
+                        onClick={() => setEditingUser(null)}
+                        className="px-5 py-2 bg-gray-300 rounded-xl hover:bg-gray-400 transition-all"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        onClick={() => updateUser(editingUser.id)}
+                        className="px-5 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all"
+                      >
+                        Simpan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-
-          {/* ===== TABLE STATUS ===== */}
           {/* ===== TABLE STATUS ===== */}
             {activeTab === "table" && (
               <div className="space-y-6">
