@@ -6,6 +6,7 @@ type Order struct {
 	ID        uint       `gorm:"primaryKey"`
 	TableID   uint       `gorm:"not null"`                      // dine-in per meja
 	Table     Table      `gorm:"foreignKey:TableID"`
+	Customer  string	 `gorm:"type:varchar(100)"`
 	Total     float64    `gorm:"not null"`
 	Status    string     `gorm:"type:varchar(20);default:'unpaid'"` // unpaid, paid
 	CreatedAt time.Time

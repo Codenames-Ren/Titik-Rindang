@@ -24,6 +24,7 @@ func main() {
 		&models.Auth{},
 		&models.Invoice{},
 		&models.Menu{},
+		&models.Order{},
 		&models.OrderItem{},
 		&models.Reservation{},
 		&models.Table{},
@@ -50,6 +51,7 @@ func main() {
 	routes.MenuRoutes(router)
 	routes.TableRoutes(router)
 	routes.AuthRoutes(router)
+	routes.OrderRoutes(router)
 
 	router.Static("/src/uploads/menu", "./src/uploads/menu")
 

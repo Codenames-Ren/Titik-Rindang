@@ -12,241 +12,287 @@
 
 ### 🧾 /reservation
 
-**Method:** `POST`, `GET`
-
-Endpoint ini digunakan untuk sistem **reservasi pelanggan umum** maupun **akses internal** oleh staff/cashier/admin.  
-Endpoint **tanpa middleware** bersifat **public** (tidak perlu login) dan digunakan oleh **customer** untuk membuat reservasi.  
-Endpoint dengan middleware hanya bisa diakses oleh **user internal** (login required).
+**Method:** `POST`, `GET`  
+Digunakan untuk sistem **reservasi pelanggan** (public) dan **akses internal** (admin/staff/cashier).
 
 ---
 
 #### 🔹 `POST /reservation`
 
-**Deskripsi:**  
-Digunakan oleh pelanggan umum untuk **membuat reservasi baru** tanpa perlu login.  
-Saat data dikirim, sistem otomatis menyimpan data ke database dengan status awal **`unpaid`**.  
-Setelah submit, frontend akan menampilkan **QR code dummy** untuk simulasi pembayaran.
+Membuat reservasi baru tanpa login.  
+Status awal: `unpaid`.
 
-**Flow:**
-
-1. Customer isi form reservasi (nama, email, tanggal, jumlah tamu, dll).
-2. Data dikirim → otomatis tersimpan di database dengan status `unpaid`.
-3. Frontend menampilkan QR dummy untuk pembayaran.
-4. Setelah klik tombol “Konfirmasi Pembayaran”, frontend memanggil endpoint `POST /reservation/confirm/:id`.
-
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `POST /reservation/confirm/:id`
 
-**Deskripsi:**  
-Digunakan untuk **mengonfirmasi pembayaran reservasi** setelah customer menekan tombol “Konfirmasi Pembayaran”.  
-Endpoint ini akan mengubah status reservasi dari `unpaid` menjadi **`paid`** dan mengirimkan **invoice (dummy)** ke email customer yang diinput di form reservasi.
+Konfirmasi pembayaran → status berubah menjadi `paid`.  
+Mengirim invoice dummy ke email.
 
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `GET /reservation/`
 
-**Deskripsi:**  
-Mengambil semua data reservasi dari database.  
-Hanya bisa diakses oleh **user internal yang login**.
+Mengambil semua reservasi.
 
-**Akses:** Login Required (`AuthMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin, Staff, Cashier
 
 ---
 
 #### 🔹 `GET /reservation/:id`
 
-**Deskripsi:**  
-Mengambil detail reservasi berdasarkan ID tertentu.
+Detail reservasi.
 
-**Akses:** Login Required (`AuthMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin, Staff, Cashier
 
 ---
 
 #### 🔹 `PUT /reservation/:id`
 
-**Deskripsi:**  
-Mengubah atau memperbarui data reservasi tertentu.  
-Biasanya digunakan oleh **kasir** untuk mengubah status atau detail tambahan.
+Update reservasi (status/pindah meja).
 
-**Akses:** Login Required (`AuthMiddleware()`, `CashierMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Cashier only
 
 ---
 
 #### 🔹 `DELETE /reservation/:id`
 
-**Deskripsi:**  
-Menghapus (soft delete) data reservasi.  
-Hanya bisa diakses oleh **admin**.
+Hapus reservasi.
 
-**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin only
+
+---
 
 ---
 
 ### 🍽️ /table
 
-**Method:** `POST`, `GET`
-
-Endpoint ini digunakan untuk **pengelolaan dan pemilihan meja** baik oleh pelanggan umum maupun user internal.  
-Endpoint **tanpa middleware** bersifat **public** dan digunakan untuk **melihat daftar meja yang tersedia** serta **memilih nomor meja** pada saat reservasi atau dine-in.  
-Sementara endpoint dengan middleware hanya dapat diakses oleh **user internal** yang sudah login sesuai rolenya.
+Digunakan untuk pengelolaan meja.
 
 ---
 
 #### 🔹 `GET /table/`
 
-**Deskripsi:**  
-Menampilkan semua data meja yang tersedia (termasuk yang sedang digunakan).  
-Digunakan oleh frontend untuk menampilkan daftar meja kepada pelanggan saat melakukan pemesanan (reservasi/dine-in).
+Semua data meja.
 
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `GET /table/:id`
 
-**Deskripsi:**  
-Mengambil detail satu meja berdasarkan ID-nya (misalnya nomor meja atau kode meja tertentu).  
-Digunakan untuk menampilkan informasi spesifik meja yang dipilih customer.
+Detail meja.
 
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `POST /table/`
 
-**Deskripsi:**  
-Menambahkan data meja baru ke dalam sistem.  
-Biasanya dilakukan oleh **user internal** (staff/admin) untuk menambah daftar meja di sistem.
+Tambah meja baru.
 
-**Akses:** Login Required (`AuthMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin, Staff
 
 ---
 
 #### 🔹 `PUT /table/:id`
 
-**Deskripsi:**  
-Memperbarui data meja, seperti status meja (tersedia, terisi, dibersihkan, dsb).  
-Biasanya dilakukan oleh **kasir** atau staff yang bertanggung jawab terhadap meja.
+Update status meja.
 
-**Akses:** Login Required (`AuthMiddleware()`, `CashierMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Cashier only
 
 ---
 
 #### 🔹 `DELETE /table/:id`
 
-**Deskripsi:**  
-Menghapus (soft delete) data meja dari sistem.  
-Biasanya digunakan oleh **admin** untuk manajemen data meja yang sudah tidak aktif digunakan.
+Hapus meja.
 
-**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin only
+
+---
 
 ---
 
 ### 📋 /menu
 
-**Method:** `POST`, `GET`
-
-Endpoint ini digunakan untuk **pengelolaan menu makanan dan minuman** di sistem.  
-Endpoint **tanpa middleware** bersifat **public**, karena customer perlu bisa **melihat daftar menu yang tersedia** dan **memilih menu** saat melakukan pemesanan (dine-in via website).  
-Endpoint dengan middleware hanya dapat diakses oleh **user internal dengan role admin**, karena hanya admin yang berwenang untuk menambah, mengubah, atau menghapus menu.
+Digunakan untuk menampilkan & mengelola menu.
 
 ---
 
 #### 🔹 `GET /menu/`
 
-**Deskripsi:**  
-Menampilkan semua menu yang tersedia di database.  
-Digunakan oleh frontend agar pelanggan bisa melihat daftar makanan dan minuman yang tersedia di restoran.
+Semua menu.
 
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `GET /menu/:id`
 
-**Deskripsi:**  
-Mengambil detail satu menu berdasarkan ID-nya.  
-Digunakan untuk menampilkan detail menu tertentu (misalnya deskripsi, harga, gambar, kategori, dll).
+Detail menu.
 
-**Akses:** Public (tanpa login)
+**Akses:** Public
 
 ---
 
 #### 🔹 `POST /menu/`
 
-**Deskripsi:**  
-Menambahkan menu baru ke dalam sistem.  
-Hanya **admin** yang dapat menambah menu, karena menu baru biasanya dibuat lewat dashboard admin.
+Tambah menu baru.
 
-**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin only
 
 ---
 
 #### 🔹 `PUT /menu/:id`
 
-**Deskripsi:**  
-Memperbarui data menu (seperti harga, stok, kategori, atau deskripsi).  
-Biasanya digunakan untuk update menu yang sudah ada.
+Update menu.
 
-**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin only
 
 ---
 
 #### 🔹 `DELETE /menu/:id`
 
-**Deskripsi:**  
-Menghapus (soft delete) menu dari sistem.  
-Digunakan oleh **admin** jika ada menu yang sudah tidak dijual atau perlu diarsipkan.
+Hapus menu.
 
-**Akses:** Login Required (`AuthMiddleware()`, `AdminMiddleware()`)  
+**Akses:** Login Required  
 **Role:** Admin only
+
+---
 
 ---
 
 ### 🔐 /auth
 
-Endpoint ini punya sub-endpoint berikut:
+- `POST /auth/login`
+- `GET /auth/profile`
+- `GET /auth/check-login`
+- `POST /auth/logout`
 
-- `/auth/login` → **POST** — buat login
-- `/auth/profile` → **GET** — buat halaman profil user (gak dipake gak masalah)
-- `/auth/check-login` → **GET** — buat cek siapa user yang sedang login
-- `/auth/logout` → **POST** — buat logout
+---
 
 ---
 
 ### 🧑‍💼 /admin
 
-Endpoint ini khusus untuk **Admin**.  
-Untuk mengakses endpoint ini, role yang login **wajib admin**.
+Endpoint khusus admin.
 
 **Sub-endpoint:**
 
-- `/admin/register` → **POST** — buat create akun baru dari halaman dashboard admin.  
-  Role yang bisa dipilih: `staff` & `cashier`.
-- `/admin/users` → **GET** — buat cek list user yang terdaftar di database.
-- `/admin/users/:id` → **GET** — buat cek user berdasarkan ID (contoh: `/admin/users/CAS-001`).
-- `/admin/users/:id` → **PUT** — buat update password user.
-- `/admin/users/:id` → **DELETE** — buat soft delete akun user.
-- `/admin/dashboard` → **GET** — buat cek username admin (opsional).
+- `POST /admin/register`
+- `GET /admin/users`
+- `GET /admin/users/:id`
+- `PUT /admin/users/:id`
+- `DELETE /admin/users/:id`
+- `GET /admin/dashboard`
 
 ---
 
-> 🧩 **Catatan:**  
-> Dokumentasi ini akan terus dilengkapi seiring berjalannya pengembangan project.
+---
 
-> 📘 **Tips:**  
-> Buka langsung di GitHub biar baca dokumentasi ini lebih enak.
+### 🍱 /order
+
+Endpoint untuk sistem **pemesanan menu dine-in**.  
+Public endpoint digunakan oleh customer, endpoint lain hanya untuk user internal.
+
+---
+
+## ✅ Public Endpoint (Tanpa Login)
+
+#### 🔹 `POST /order/`
+
+Customer membuat order dine-in.
+
+**Contoh body:**
+
+```json
+{
+  "table_id": 2,
+  "customer": "Kisaki",
+  "items": [
+    { "menu_id": 1, "qty": 2 },
+    { "menu_id": 3, "qty": 1 }
+  ]
+}
+```
+
+**Akses:** Public
+
+---
+
+#### 🔹 `PUT /order/:id/confirm`
+
+Customer mengonfirmasi pembayaran order.  
+Status berubah dari `unpaid` → `paid`.
+
+**Akses:** Public
+
+---
+
+## 🔐 Endpoint Internal (Login Required)
+
+#### 🔹 `GET /order/`
+
+Semua order beserta item & menu.
+
+**Akses:** Login Required  
+**Role:** Admin, Staff, Cashier
+
+---
+
+#### 🔹 `GET /order/:id`
+
+Detail order lengkap.
+
+**Akses:** Login Required  
+**Role:** Admin, Staff, Cashier
+
+---
+
+#### 🔹 `GET /order/:id/receipt`
+
+Generate PDF struk pembelian.  
+File disimpan otomatis ke:
+
+```
+src/uploads/receipts/receipt_{id}.pdf
+```
+
+**Akses:** Login Required  
+**Role:** Admin, Staff, Cashier
+
+---
+
+## 🗑️ Admin Only
+
+#### 🔹 `DELETE /order/:id`
+
+Menghapus order + semua itemnya.
+
+**Akses:** Login Required  
+**Role:** Admin only
+
+---
+
+---
+
+## 🧩 Catatan
+
+Dokumentasi ini akan diperbarui seiring pengembangan project.
+
+## 📘 Tips
+
+Buka langsung di GitHub agar lebih mudah dibaca.
