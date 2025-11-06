@@ -123,13 +123,15 @@ interface MenuItem {
   id: number;
   name: string;
   tagline?: string;
-  imageURL?: string;
+  imageURL: string | File;
+  preview?: string; 
   price: number;
 }
 
 
+
 interface User {
-  id: string; // sebelumnya number
+  id: string; 
   username: string;
   role: string;
 }
@@ -145,12 +147,14 @@ export default function AdminSection() {
 
   // ===== MENU MANAGEMENT =====
   const [menus, setMenus] = useState<MenuItem[]>([]);
+
   interface NewMenuItem {
   name: string;
   tagline: string;
   price: string;
   category?: string;
   imageURL: string | File;
+  preview?: string; // ✅ fix error TS(2353), TS(2339)
 }
 
 const [newItem, setNewItem] = useState<NewMenuItem>({
@@ -159,7 +163,9 @@ const [newItem, setNewItem] = useState<NewMenuItem>({
   price: '',
   category: '',
   imageURL: '',
+  preview: '', // 🧩 tambahkan ini
 });
+
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -194,123 +200,127 @@ const [newItem, setNewItem] = useState<NewMenuItem>({
 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (editingItem) {
-        setEditingItem({ ...editingItem, imageURL: reader.result as string });
-      } else {
-        setNewItem({ ...newItem, imageURL: reader.result as string });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+  const previewURL = URL.createObjectURL(file); // Buat URL preview lokal
 
-  const addMenuItem = async () => {
-  if (!newItem.name || !newItem.price) {
-    alert('Lengkapi semua field!');
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('Kamu belum login sebagai admin.');
-    return;
-  }
-
-  try {
-    const res = await fetch('http://localhost:8080/menu/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        name: newItem.name,
-        tagline: newItem.tagline || '',
-        price: parseFloat(newItem.price),
-        image_url: typeof newItem.imageURL === 'string' ? newItem.imageURL : '',
-      }),
+  // Jika sedang mengedit item
+  if (editingItem) {
+    setEditingItem({
+      ...editingItem,
+      imageURL: file,
+      preview: previewURL,  // update preview saat edit
     });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Gagal menambahkan menu.');
-    }
-
-    alert('✅ Menu berhasil ditambahkan!');
-
-    const updated = await res.json();
-
-// Gunakan image base64 yang sudah dikirim jika backend tidak kembalikan imageURL
-  const newMenu = {
-    id: updated.data?.ID || updated.data?.id,
-    name: updated.data?.Name || updated.data?.name || newItem.name,
-    tagline: updated.data?.Tagline || updated.data?.tagline || newItem.tagline,
-    imageURL: updated.data?.ImageURL || updated.data?.image_url || newItem.imageURL || '',
-    price: updated.data?.Price || updated.data?.price || parseFloat(newItem.price),
-  };
-
-
-// Tambahkan ke list menu
-setMenus((prev) => [...prev, newMenu]);
-setNewItem({ name: '', tagline: '', price: '', imageURL: '', category: '' });
-
-    setNewItem({ name: '', tagline: '', price: '', imageURL: '', category: '' });
-  } catch (err) {
-    console.error(err);
-    alert('❌ Gagal menambahkan menu. Pastikan backend menerima JSON.');
+  } else {
+    setNewItem({
+      ...newItem,
+      imageURL: file,
+      preview: previewURL,  // update preview saat tambah baru
+    });
   }
 };
 
 
+  const addMenuItem = async () => {
+  if (!newItem.name || !newItem.price || !newItem.imageURL) {
+    alert("Lengkapi semua field termasuk gambar!");
+    return;
+  }
 
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Kamu belum login sebagai admin.");
+    return;
+  }
 
-const updateMenuItem = async (id: number, updatedMenu: any) => {
   try {
-    const res = await fetch(`http://localhost:8080/menu/${id}`, {
-      method: 'PUT',
+    const formData = new FormData();
+    formData.append("name", newItem.name);
+    formData.append("tagline", newItem.tagline || "");
+    formData.append("price", newItem.price.toString());
+    formData.append("image", newItem.imageURL); // Gambar yang diupload
+
+    const res = await fetch("http://localhost:8080/menu/", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        name: updatedMenu.name,
-        tagline: updatedMenu.tagline,
-        price: updatedMenu.price,
-        image_url: updatedMenu.imageURL, // ✅ tambahkan ini
-      }),
+      body: formData,
     });
 
     const data = await res.json();
 
-    if (!res.ok) throw new Error(data.error || 'Gagal update menu.');
+    if (!res.ok) {
+      throw new Error(data.message || "Gagal menambahkan menu.");
+    }
 
-    // ✅ update list menus tanpa ganti bentuk state
-    setMenus((prevMenus) =>
-      prevMenus.map((m) =>
+    alert("✅ Menu berhasil ditambahkan!");
+
+    // Update state dengan gambar dari backend
+    const newMenu = {
+      id: data.data?.ID,
+      name: data.data?.Name,
+      tagline: data.data?.Tagline,
+      imageURL: data.data?.ImageURL || "", // Gambar dari backend
+      price: data.data?.Price || parseFloat(newItem.price),
+    };
+
+    setMenus((prev) => [...prev, newMenu]);
+    setNewItem({
+      name: "",
+      tagline: "",
+      price: "",
+      category: "",
+      imageURL: "",
+      preview: "", // Reset preview setelah menu ditambahkan
+    });
+  } catch (err) {
+    console.error("❌ Gagal menambahkan menu:", err);
+    alert("❌ Gagal menambahkan menu.");
+  }
+};
+
+const updateMenuItem = async (id: number, updatedMenu: any) => {
+  try {
+    const formData = new FormData();
+    formData.append("name", updatedMenu.name);
+    formData.append("tagline", updatedMenu.tagline);
+    formData.append("price", updatedMenu.price.toString());
+    if (updatedMenu.imageURL instanceof File) {
+      formData.append("image", updatedMenu.imageURL);
+    }
+
+    const res = await fetch(`http://localhost:8080/menu/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Gagal update menu.");
+
+    setMenus((prev) =>
+      prev.map((m) =>
         m.id === id
           ? {
               ...m,
               name: data.data?.Name || updatedMenu.name,
               tagline: data.data?.Tagline || updatedMenu.tagline,
-              imageURL: data.data?.ImageURL || updatedMenu.imageURL,
+              imageURL: data.data?.ImageURL || m.imageURL,
               price: data.data?.Price || updatedMenu.price,
             }
           : m
       )
     );
 
-    alert('✅ Menu berhasil diupdate!');
+    alert("✅ Menu berhasil diupdate!");
+    setEditingItem(null);
   } catch (err) {
-    console.error('❌ Gagal update menu:', err);
-    alert('Gagal update menu');
+    console.error("❌ Gagal update menu:", err);
+    alert("Gagal update menu.");
   }
 };
-
-
 
   const deleteMenuItem = async (id: number) => {
   if (!confirm('Yakin ingin menghapus menu ini?')) return;
@@ -765,17 +775,27 @@ const getStatusText = (status: TableStatus) =>
                   </label>
                 </div>
 
-                {(newItem.imageURL || editingItem?.imageURL) && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                    <img
-                      src={editingItem ? editingItem.imageURL : newItem.imageURL}
-                      alt="preview"
-                      className="w-40 h-40 object-cover rounded-xl border-4 border-gray-200"
-                    />
-                  </div>
-                )}
-
+                {/* Preview gambar */}
+                  {(newItem.preview || editingItem?.preview || newItem.imageURL || editingItem?.imageURL) && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                      <img
+                        src={
+                          // Jika sedang mengedit, gunakan preview gambar yang sudah ada
+                          editingItem?.preview ||
+                          // Jika menambah item baru, gunakan preview gambar baru
+                          newItem.preview ||
+                          // Jika tidak ada preview, gunakan imageURL yang sudah ada (dari backend)
+                          editingItem?.imageURL ||  // pastikan ini ada di editingItem
+                          newItem.imageURL ||
+                          // Fallback ke gambar placeholder jika tidak ada preview dan imageURL
+                          "https://via.placeholder.com/150?text=No+Image"
+                        }
+                        alt="preview"
+                        className="w-40 h-40 object-cover rounded-xl border-4 border-gray-200"
+                      />
+                    </div>
+                  )}
                 <div className="mt-6 flex gap-3">
                   <button
                     onClick={() => {
@@ -810,49 +830,47 @@ const getStatusText = (status: TableStatus) =>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {menus.map((item) => (
-                  <div
-                    key={item.id ? `menu-${item.id}` : `temp-${item.name}-${Math.random()}`}
-                    className="border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all group"
-                  >
-                    {item.imageURL ? (
-                      <img
-                        src={item.imageURL}
-                        alt={item.name}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <Coffee size={48} className="text-gray-400" />
-                      </div>
-                    )}
+                    {menus.map((item) => (
+                      <div
+                        key={item.id ? `menu-${item.id}` : `temp-${item.name}-${Math.random()}`}
+                        className="border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all group"
+                      >
+                        <img
+                          src={`http://localhost:8080${item.imageURL}`} // Ambil imageURL dari backend dan pastikan ditambahkan dengan URL frontend
+                          alt={item.name}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image"; // fallback image
+                          }}
+                        />
 
-                    <div className="p-4">
-                      <h4 className="font-bold text-gray-800 text-lg">{item.name}</h4>
-                      <p className="text-gray-500 text-sm mt-1">{item.tagline}</p>
-                      <p className="text-emerald-700 font-semibold text-lg mt-2">
-                        Rp {item.price.toLocaleString('id-ID')}
-                      </p>
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-1"
-                        >
-                          <Edit size={16} /> Edit
-                        </button>
-                        <button
-                          onClick={() => deleteMenuItem(item.id)}
-                          className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-all flex items-center justify-center gap-1"
-                        >
-                          <Trash2 size={16} /> Hapus
-                        </button>
+                        <div className="p-4">
+                          <h4 className="font-bold text-gray-800 text-lg">{item.name}</h4>
+                          <p className="text-gray-500 text-sm mt-1">{item.tagline}</p>
+                          <p className="text-emerald-700 font-semibold text-lg mt-2">
+                            Rp {item.price.toLocaleString("id-ID")}
+                          </p>
+
+                          <div className="flex gap-2 mt-4">
+                            <button
+                              onClick={() => setEditingItem(item)}
+                              className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-1"
+                            >
+                              <Edit size={16} /> Edit
+                            </button>
+                            <button
+                              onClick={() => deleteMenuItem(item.id)}
+                              className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-all flex items-center justify-center gap-1"
+                            >
+                              <Trash2 size={16} /> Hapus
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-
                 )}
+
               </div>
             </div>
           )}
