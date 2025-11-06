@@ -22,13 +22,13 @@ type OrderItemInput struct {
 	Qty    int
 }
 
+// 🔹 Create Order 
 func (s *OrderService) CreateOrder(tableID uint, customer string, items []OrderItemInput) (*models.Order, error) {
 	var table models.Table
 	if err := s.DB.First(&table, tableID).Error; err != nil {
 		return nil, errors.New("table not found")
 	}
 
-	// check upcoming reservation
 	var upcoming models.Reservation
 	err := s.DB.Where("table_id = ? AND reservation_date > ?", tableID, time.Now()).
 		Order("reservation_date ASC").
@@ -82,21 +82,28 @@ func (s *OrderService) CreateOrder(tableID uint, customer string, items []OrderI
 	order.UpdatedAt = time.Now()
 	s.DB.Save(&order)
 
+	s.DB.Model(&models.Table{}).Where("id = ?", tableID).Update("status", "in_use")
+
 	var fullOrder models.Order
 	s.DB.Preload("OrderItems.Menu").Preload("Table").First(&fullOrder, order.ID)
 
 	return &fullOrder, nil
 }
 
-func (s *OrderService) ConfirmOrder(id uint) (*models.Order, error) {
+// 🔹 Confirm Order
+func (s *OrderService) ConfirmOrder(id uint, paymentMethod string) (*models.Order, error) {
 	var order models.Order
 	if err := s.DB.First(&order, id).Error; err != nil {
 		return nil, errors.New("order not found")
 	}
 
 	order.Status = "paid"
+	order.PaymentMethod = paymentMethod
 	order.UpdatedAt = time.Now()
-	s.DB.Save(&order)
+
+	if err := s.DB.Save(&order).Error; err != nil {
+		return nil, err
+	}
 
 	var fullOrder models.Order
 	s.DB.Preload("OrderItems.Menu").Preload("Table").First(&fullOrder, order.ID)

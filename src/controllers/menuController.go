@@ -84,7 +84,7 @@ func CreateMenu(c *gin.Context) {
 		return
 	}
 
-	imageURL := "/" + filePath
+	imageURL := "/uploads/menu/" + filename
 
 	menu := models.Menu{
 		Name:     name,

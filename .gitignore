@@ -1,3 +1,4 @@
 /src/seeders/*
 /src/uploads/*
 .env
+.env.local

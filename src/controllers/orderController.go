@@ -27,6 +27,11 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	if len(input.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "order must have at least one item"})
+		return
+	}
+
 	svc := services.NewOrderService(database.DB)
 
 	orderItems := []services.OrderItemInput{}
@@ -95,7 +100,7 @@ func GetOrderByID(c *gin.Context) {
 	})
 }
 
-//confirm order
+// confirm order
 func ConfirmOrder(c *gin.Context) {
 	idStr := c.Param("id")
 	idInt, err := strconv.Atoi(idStr)
@@ -104,20 +109,29 @@ func ConfirmOrder(c *gin.Context) {
 		return
 	}
 
+	var input struct {
+		PaymentMethod string `json:"payment_method" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid JSON"})
+		return
+	}
+
 	svc := services.NewOrderService(database.DB)
 
-	order, err := svc.ConfirmOrder(uint(idInt))
+	order, err := svc.ConfirmOrder(uint(idInt), input.PaymentMethod)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
+		"status":  "success",
 		"message": "order confirmed",
-		"data": order,
+		"data":    order,
 	})
 }
+
 
 //delete order
 func DeleteOrder(c *gin.Context) {
@@ -133,6 +147,13 @@ func DeleteOrder(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "order not found"})
 		return
 	}
+
+	var table models.Table
+	if err := database.DB.First(&table, order.TableID).Error; err == nil {
+		table.Status = "available"
+		database.DB.Save(&table)
+	}
+
 
 	database.DB.Where("order_id = ?", idInt).Delete(&models.OrderItem{})
 
