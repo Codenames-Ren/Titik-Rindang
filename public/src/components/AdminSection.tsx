@@ -426,39 +426,106 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
 
 
 
-  // ===== TABLE MANAGEMENT =====
-  const DEFAULT_TABLES: TableItem[] = [
-    { id: 'I1', status: 'available' },
-    { id: 'I2', status: 'booked' },
-    { id: 'I3', status: 'in_used' },
-    { id: 'O1', status: 'available' },
-    { id: 'O2', status: 'booked' },
-  ];
+  // ===== TABLE MANAGEMENT (ADMIN ONLY) =====
+type TableStatus = 'available' | 'booked' | 'in_used';
 
-  const [tables, setTables] = useState<TableItem[]>(DEFAULT_TABLES);
+interface TableItem {
+  id: string;
+  status: TableStatus;
+}
 
-  const updateTableStatus = (id: string, newStatus: TableStatus) => {
-    const updated = tables.map((t) => (t.id === id ? { ...t, status: newStatus } : t));
-    setTables(updated);
-  };
+const [tables, setTables] = useState<TableItem[]>([]);
+const [newTableId, setNewTableId] = useState('');
 
-  const getStatusColor = (status: TableStatus) => {
-    switch (status) {
-      case 'available': return 'bg-emerald-500';
-      case 'booked': return 'bg-amber-500';
-      case 'in_used': return 'bg-rose-500';
-      default: return 'bg-gray-400';
-    }
-  };
+// 🔹 GET (Public)
+useEffect(() => {
+  fetch("http://localhost:8080/table/")
+    .then((res) => res.json())
+    .then((data) => {
+      const raw = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
+      setTables(
+        raw.map((t: any) => ({
+          id: t.ID || t.id,
+          status: t.Status || t.status || 'available',
+        }))
+      );
+    })
+    .catch((err) => console.error("❌ Gagal fetch meja:", err));
+}, []);
 
-  const getStatusText = (status: TableStatus) => {
-    switch (status) {
-      case 'available': return 'Tersedia';
-      case 'booked': return 'Dipesan';
-      case 'in_used': return 'Digunakan';
-      default: return 'Unknown';
-    }
-  };
+// 🔹 POST (Admin)
+const addTable = async () => {
+  if (!newTableId.trim()) return alert("Masukkan nomor meja (contoh: 1)");
+  if (!token) return alert("❌ Anda belum login sebagai admin.");
+
+  const tableNumber = parseInt(newTableId, 10);
+  if (isNaN(tableNumber)) {
+    alert("❌ Nomor meja harus berupa angka, contoh: 1");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:8080/table/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        table_no: tableNumber, // ✅ sesuai dengan backend
+        status: "available",
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Gagal menambah meja");
+
+    setTables((prev) => [...prev, { id: data.data.ID || tableNumber.toString(), status: data.data.Status }]);
+    setNewTableId("");
+    alert("✅ Meja berhasil ditambahkan!");
+  } catch (err) {
+    console.error("❌ Error add table:", err);
+    alert("Gagal menambah meja.");
+  }
+};
+
+
+// 🔹 DELETE (Admin)
+const deleteTable = async (id: string) => {
+  if (!confirm(`🗑️ Yakin ingin menghapus meja ${id}?`)) return;
+  if (!token) return alert("❌ Anda belum login sebagai admin.");
+
+  try {
+    const res = await fetch(`http://localhost:8080/table/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Gagal menghapus meja");
+
+    setTables((prev) => prev.filter((t) => t.id !== id));
+    alert("✅ Meja berhasil dihapus!");
+  } catch (err) {
+    console.error("❌ Gagal hapus meja:", err);
+    alert("Gagal menghapus meja.");
+  }
+};
+
+const getStatusColor = (status: TableStatus) =>
+  status === "available"
+    ? "bg-emerald-500"
+    : status === "booked"
+    ? "bg-amber-500"
+    : "bg-rose-500";
+
+const getStatusText = (status: TableStatus) =>
+  status === "available"
+    ? "Tersedia"
+    : status === "booked"
+    ? "Dipesan"
+    : "Digunakan";
+
 
   const menuNav = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -821,39 +888,56 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
 
 
           {/* ===== TABLE STATUS ===== */}
-          {activeTab === 'table' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {tables.map((table) => (
-                  <div
-                    key={table.id}
-                    className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl font-bold text-gray-800">Meja {table.id}</span>
-                      <div className={`w-4 h-4 rounded-full ${getStatusColor(table.status)} animate-pulse`}></div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <div className={`${getStatusColor(table.status)} text-white text-center py-3 rounded-xl font-semibold`}>
+          {/* ===== TABLE STATUS ===== */}
+            {activeTab === "table" && (
+              <div className="space-y-6">
+                {/* Tambah Meja Baru */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Tambah Meja Baru</h3>
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      placeholder="Contoh: 1"
+                      value={newTableId}
+                      onChange={(e) => setNewTableId(e.target.value)}
+                      className="border border-gray-300 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    />
+                    <button
+                      onClick={addTable}
+                      className="bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all"
+                    >
+                      Tambah
+                    </button>
+                  </div>
+                </div>
+
+                {/* Daftar Meja */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {tables.map((table) => (
+                    <div
+                      key={table.id}
+                      className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-2xl font-bold text-gray-800">Meja {table.id}</span>
+                        <div className={`w-4 h-4 rounded-full ${getStatusColor(table.status)} animate-pulse`} />
+                      </div>
+
+                      <div className={`${getStatusColor(table.status)} text-white text-center py-3 rounded-xl font-semibold mb-4`}>
                         {getStatusText(table.status)}
                       </div>
-                    </div>
 
-                    <select
-                      value={table.status}
-                      onChange={(e) => updateTableStatus(table.id, e.target.value as TableStatus)}
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-medium text-gray-700"
-                    >
-                      <option value="available">✅ Tersedia</option>
-                      <option value="booked">📅 Dipesan</option>
-                      <option value="in_used">🍽️ Sedang Dipakai</option>
-                    </select>
-                  </div>
-                ))}
+                      <button
+                        onClick={() => deleteTable(table.id)}
+                        className="w-full bg-red-500 text-white py-2 rounded-xl hover:bg-red-600 transition-all"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </main>
     </div>
