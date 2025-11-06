@@ -181,11 +181,7 @@ const [newItem, setNewItem] = useState<NewMenuItem>({
         id: item.ID,
         name: item.Name,
         tagline: item.Tagline,
-        imageURL: item.ImageURL
-          ? item.ImageURL.startsWith("http")
-            ? item.ImageURL
-            : `http://localhost:8080${item.ImageURL}`
-          : "", // handle null
+        imageURL: item.ImageURL || "",
         price: item.Price || 0,
       }));
 
@@ -243,20 +239,18 @@ const [newItem, setNewItem] = useState<NewMenuItem>({
     }
 
     alert('✅ Menu berhasil ditambahkan!');
+
     const updated = await res.json();
 
-// ✅ Normalisasi data biar gak undefined dan tetap sesuai format frontend
-const newMenu = {
-  id: updated.data?.ID || updated.data?.id,
-  name: updated.data?.Name || updated.data?.name || '',
-  tagline: updated.data?.Tagline || updated.data?.tagline || '',
-  imageURL: updated.data?.ImageURL
-    ? updated.data.ImageURL.startsWith('http')
-      ? updated.data.ImageURL
-      : `http://localhost:8080${updated.data.ImageURL}`
-    : '',
-  price: updated.data?.Price || updated.data?.price || 0,
-};
+// Gunakan image base64 yang sudah dikirim jika backend tidak kembalikan imageURL
+  const newMenu = {
+    id: updated.data?.ID || updated.data?.id,
+    name: updated.data?.Name || updated.data?.name || newItem.name,
+    tagline: updated.data?.Tagline || updated.data?.tagline || newItem.tagline,
+    imageURL: updated.data?.ImageURL || updated.data?.image_url || newItem.imageURL || '',
+    price: updated.data?.Price || updated.data?.price || parseFloat(newItem.price),
+  };
+
 
 // Tambahkan ke list menu
 setMenus((prev) => [...prev, newMenu]);
@@ -280,7 +274,12 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(updatedMenu),
+      body: JSON.stringify({
+        name: updatedMenu.name,
+        tagline: updatedMenu.tagline,
+        price: updatedMenu.price,
+        image_url: updatedMenu.imageURL, // ✅ tambahkan ini
+      }),
     });
 
     const data = await res.json();
@@ -293,10 +292,10 @@ const updateMenuItem = async (id: number, updatedMenu: any) => {
         m.id === id
           ? {
               ...m,
-              name: data.data?.Name || m.name,
-              tagline: data.data?.Tagline || m.tagline,
-              imageURL: data.data?.ImageURL || m.imageURL,
-              price: data.data?.Price || m.price,
+              name: data.data?.Name || updatedMenu.name,
+              tagline: data.data?.Tagline || updatedMenu.tagline,
+              imageURL: data.data?.ImageURL || updatedMenu.imageURL,
+              price: data.data?.Price || updatedMenu.price,
             }
           : m
       )
