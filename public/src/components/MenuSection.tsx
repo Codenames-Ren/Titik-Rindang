@@ -11,6 +11,8 @@ import {
   MapPin,
   Users,
 } from "lucide-react";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
 
@@ -475,11 +477,15 @@ const MenuSection: React.FC = () => {
         if (s === "free") {
           setSelectedTable(t);
         } else {
-          alert(
-            `Meja ini ${
-              s === "occupied" ? "sedang terisi" : "sudah dipesan"
-            }. Silakan pilih meja lain.`
-          );
+          Swal.fire({
+            icon: "warning",
+            title: "Meja Tidak Tersedia",
+            text:
+              s === "occupied"
+                ? "Meja ini sedang terisi. Silakan pilih meja lain."
+                : "Meja ini sudah dipesan. Silakan pilih meja lain.",
+            confirmButtonColor: "#166534",
+          });
         }
         return;
       }
@@ -489,7 +495,13 @@ const MenuSection: React.FC = () => {
   // ---------- Booking / Order flow ----------
   const proceedToTableSelection = () => {
     if (cart.length === 0) {
-      alert("Keranjang masih kosong! Silakan pilih menu terlebih dahulu.");
+      Swal.fire({
+        icon: "warning",
+        title: "Keranjang Kosong",
+        text: "Silakan pilih menu terlebih dahulu.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
     setShowCart(false);
@@ -499,11 +511,23 @@ const MenuSection: React.FC = () => {
   // when user finalizes table & customer name -> open payment modal
   const openPaymentModal = () => {
     if (!selectedTable) {
-      alert("Pilih meja terlebih dahulu.");
+      Swal.fire({
+        icon: "warning",
+        title: "Belum Memilih Meja",
+        text: "Silakan pilih meja terlebih dahulu sebelum melanjutkan.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
     if (!customerName || customerName.trim().length === 0) {
-      alert("Masukkan nama customer.");
+      Swal.fire({
+        icon: "warning",
+        title: "Nama Belum Diisi",
+        text: "Mohon isi nama customer terlebih dahulu.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
     setShowPaymentModal(true);
@@ -542,9 +566,13 @@ const MenuSection: React.FC = () => {
       if (availableCandidate) backendTableId = availableCandidate.id;
     }
     if (backendTableId === null) {
-      alert(
-        "Gagal menemukan ID meja di server. Pastikan data meja di backend sinkron dengan denah."
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menemukan Meja",
+        text: "ID meja di server tidak ditemukan. Pastikan data meja di backend sudah sinkron.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
 
@@ -589,18 +617,35 @@ const MenuSection: React.FC = () => {
       // keep confirmation open and then clear cart after a while? we'll keep until user clicks confirm payment
     } catch (err: any) {
       console.error("create order failed", err);
-      alert("Gagal membuat pesanan: " + (err.message || String(err)));
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Membuat Pesanan",
+        text: err.message || "Terjadi kesalahan saat membuat pesanan.",
+        confirmButtonColor: "#166534",
+      });
     }
   };
 
   // PUT /order/:id/confirm with { payment_method }
   const handleConfirmPayment = async () => {
     if (!currentOrderId) {
-      alert("Tidak ada order untuk dikonfirmasi.");
+      Swal.fire({
+        icon: "error",
+        title: "Tidak Ada Pesanan",
+        text: "Tidak ada pesanan yang bisa dikonfirmasi.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
     if (!paymentMethod) {
-      alert("Pilih metode pembayaran terlebih dahulu.");
+      Swal.fire({
+        icon: "warning",
+        title: "Metode Pembayaran Belum Dipilih",
+        text: "Silakan pilih metode pembayaran terlebih dahulu.",
+        confirmButtonColor: "#166534",
+      });
+
       return;
     }
     try {
@@ -617,12 +662,23 @@ const MenuSection: React.FC = () => {
       setCart([]);
       setSelectedTable(null);
       setPaymentMethod("");
-      alert("Pembayaran terkonfirmasi. Terima kasih!");
+      Swal.fire({
+        icon: "success",
+        title: "Pembayaran Berhasil",
+        text: "Pesanan telah dibayar. Terima kasih!",
+        confirmButtonColor: "#166534",
+      });
+
       // Optionally re-fetch tables from backend to get true statuses
       await refreshTablesFromBackend();
     } catch (err: any) {
       console.error("confirm payment failed", err);
-      alert("Gagal konfirmasi pembayaran: " + (err.message || String(err)));
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Konfirmasi Pembayaran",
+        text: err.message || "Terjadi kesalahan saat konfirmasi pembayaran.",
+        confirmButtonColor: "#166534",
+      });
     }
   };
 
@@ -983,13 +1039,15 @@ const MenuSection: React.FC = () => {
                                 if ((tableStatuses[t.id] || "free") === "free")
                                   setSelectedTable(t);
                                 else
-                                  alert(
-                                    `Meja ini ${
+                                  Swal.fire({
+                                    icon: "error",
+                                    title: "Tidak Bisa Dipilih",
+                                    text:
                                       s === "occupied"
-                                        ? "sedang terisi"
-                                        : "sudah dipesan"
-                                    }.`
-                                  );
+                                        ? "Meja ini sedang terisi."
+                                        : "Meja ini sudah dipesan.",
+                                    confirmButtonColor: "#166534",
+                                  });
                               }}
                               title={`${t.label} – ${t.seats} kursi – ${t.area}`}
                               className="absolute transition-all duration-300 hover:scale-110"
@@ -1161,7 +1219,7 @@ const MenuSection: React.FC = () => {
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         placeholder="Nama Anda"
-                        className="w-full p-3 rounded-lg border border-gray-200"
+                        className="w-full p-3 text-gray-700 rounded-lg border border-gray-200"
                       />
                     </div>
 
@@ -1259,20 +1317,21 @@ const MenuSection: React.FC = () => {
                       <button
                         onClick={openPaymentModal}
                         disabled={!selectedTable || cart.length === 0}
-                        className={`w-full py-4 rounded-xl font-bold ${
+                        className={`w-full py-4 rounded-xl font-bold transition-all duration-200 ${
                           selectedTable && cart.length > 0
-                            ? "bg-gradient-to-r from-green-800 to-green-700 text-white"
+                            ? "bg-gradient-to-r from-green-800 to-green-700 text-white hover:from-green-900 hover:to-green-800 hover:shadow-lg hover:scale-[1.02]"
                             : "bg-gray-200 text-gray-400 cursor-not-allowed"
                         }`}
                       >
                         Lanjut Pembayaran
                       </button>
+
                       <button
                         onClick={() => {
                           setShowTableSelection(false);
                           setShowCart(true);
                         }}
-                        className="w-full py-3 rounded-xl bg-white border border-gray-200"
+                        className="w-full py-3 rounded-xl bg-red-500 text-white border border-gray-200 hover:bg-red-600 hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
                       >
                         Kembali ke Keranjang
                       </button>
@@ -1293,15 +1352,17 @@ const MenuSection: React.FC = () => {
             onClick={() => setShowPaymentModal(false)}
           />
           <div className="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-xl z-10 animate-slideUp">
-            <h3 className="text-lg font-bold mb-3">Pilih Metode Pembayaran</h3>
+            <h3 className="text-lg font-bold mb-3 text-black">
+              Pilih Metode Pembayaran
+            </h3>
             <div className="space-y-3">
               <label
-                className={`w-full p-3 border rounded-lg flex items-center justify-between cursor-pointer ${
+                className={`w-full p-3 border rounded-lg flex items-center text-black justify-between cursor-pointer ${
                   paymentMethod === "Cash" ? "border-green-700 bg-green-50" : ""
                 }`}
               >
                 <div>
-                  <div className="font-semibold">Cash</div>
+                  <div className="font-semibold text-black">Cash</div>
                   <div className="text-xs text-gray-500">
                     Bayar tunai di kasir
                   </div>
@@ -1314,7 +1375,7 @@ const MenuSection: React.FC = () => {
                 />
               </label>
               <label
-                className={`w-full p-3 border rounded-lg flex items-center justify-between cursor-pointer ${
+                className={`w-full p-3 border rounded-lg flex items-center justify-between cursor-pointer text-black ${
                   paymentMethod === "E-Wallet"
                     ? "border-green-700 bg-green-50"
                     : ""
@@ -1338,13 +1399,13 @@ const MenuSection: React.FC = () => {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowPaymentModal(false)}
-                className="flex-1 py-3 rounded-xl bg-white border border-gray-200"
+                className="flex-1 py-3 rounded-xl bg-red-700 text-white border border-gray-300 hover:bg-red-800"
               >
                 Batal
               </button>
               <button
                 onClick={handleCreateOrder}
-                className="flex-1 py-3 rounded-xl bg-green-800 text-white"
+                className="flex-1 py-3 rounded-xl bg-green-800 text-white border-gray-300 hover:bg-green-900"
               >
                 Konfirmasi Pesanan
               </button>
@@ -1362,15 +1423,17 @@ const MenuSection: React.FC = () => {
               <Check className="w-8 h-8 text-green-800" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Pesanan Dibuat (Unpaid)
+              Pesanan Dibuat
             </h3>
             <p className="text-gray-600 mb-4">
-              Pesanan Anda sudah tersimpan dengan status <strong>unpaid</strong>
-              . Silakan lakukan konfirmasi pembayaran.
+              Pesanan Anda sudah tersimpan. Silakan lakukan pembayaran sesuai
+              metode pembayaran yang anda pilih. Terima kasih sudah memesan.
             </p>
 
             <div className="mb-4">
-              <div className="text-sm text-gray-600 mb-2">Total</div>
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Total</strong>
+              </div>
               <div className="text-2xl font-bold text-green-800">
                 Rp {getTotalPrice().toLocaleString("id-ID")}
               </div>
@@ -1382,15 +1445,15 @@ const MenuSection: React.FC = () => {
                   setShowConfirmation(false);
                   setCurrentOrderId(null);
                 }}
-                className="flex-1 py-3 rounded-xl bg-white border border-gray-200"
+                className="flex-1 py-3 rounded-xl bg-red-700 hover:bg-red-800 border border-gray-200"
               >
                 Tutup
               </button>
               <button
                 onClick={handleConfirmPayment}
-                className="flex-1 py-3 rounded-xl bg-green-800 text-white"
+                className="flex-1 py-3 rounded-xl bg-green-800 hover:bg-green-900 text-white"
               >
-                Konfirmasi Pembayaran
+                Konfirmasi dan Bayar
               </button>
             </div>
           </div>
