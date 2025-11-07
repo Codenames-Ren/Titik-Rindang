@@ -204,8 +204,10 @@ interface Reservation {
 
 interface TableItem {
   id: string;
-  status: TableStatus;
+  table_no?: number | string;
+  status: "available" | "booked" | "in_used";
 }
+
 
 export default function AdminSection() {
   const [activeTab, setActiveTab] = useState<
@@ -795,9 +797,11 @@ export default function AdminSection() {
   type TableStatus = "available" | "booked" | "in_used";
 
   interface TableItem {
-    id: string;
-    status: TableStatus;
-  }
+  id: string;
+  table_no?: number | string;
+  status: "available" | "booked" | "in_used";
+}
+
 
   const [tables, setTables] = useState<TableItem[]>([]);
   const [newTableId, setNewTableId] = useState("");
@@ -815,6 +819,7 @@ export default function AdminSection() {
         setTables(
           raw.map((t: any) => ({
             id: t.ID || t.id,
+            table_no: t.TableNo || t.table_no || "-", // 🆕 ambil dari backend
             status: t.Status || t.status || "available",
           }))
         );
@@ -1695,7 +1700,7 @@ export default function AdminSection() {
                   >
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-2xl font-bold text-gray-800">
-                        Meja {table.id}
+                        Meja {table.table_no ?? table.id}
                       </span>
                       <div
                         className={`w-4 h-4 rounded-full ${getStatusColor(
