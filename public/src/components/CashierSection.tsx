@@ -1,153 +1,343 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
 import {
   CreditCard,
   Table2,
   BarChart3,
-  Menu,
   ClipboardList,
+  Menu,
+  FileText,
   X,
-  Settings,
   LogOut,
-  CheckCircle2,
+  Settings,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
-interface Reservation {
-  id: string;
-  customer_name: string;
-  date: string;
-  guests: number;
+// ===== Interface Definitions =====
+interface MenuItem {
+  id: number;
+  name: string;
+  tagline: string;
+  image_url: string;
+  price: number;
+}
+
+interface TableItem {
+  id?: string | number;
+  ID?: string | number;
+  table_no?: string | number;
   status: string;
 }
 
-interface Table {
-  id: string;
+interface Reservation {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  table_id: number;
+  reservation_date: string;
+  table_fee: number;
   status: string;
+}
+
+interface Order {
+  id: number;
+  table_id: number;
+  customer: string;
+  total_amount: number;
+  status: string;
+  payment_method?: string;
 }
 
 export default function CashierSection() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'reservation' | 'table' | 'order'>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'reservation' | 'table' | 'order'>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // ===== STATE =====
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [tables, setTables] = useState<TableItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // ===== FETCH DATA =====
   useEffect(() => {
-    if (!token) return;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [res1, res2] = await Promise.all([
-          fetch('http://localhost:8080/reservation/', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch('http://localhost:8080/table/', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+    fetchAllData();
+  }, []);
 
-        if (!res1.ok || !res2.ok) throw new Error('Gagal memuat data.');
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const data1 = await res1.json();
-        const data2 = await res2.json();
+      const [menuRes, tableRes, reservRes, orderRes] = await Promise.all([
+        fetch("http://localhost:8080/menu/"),
+        fetch("http://localhost:8080/table/"),
+        fetch("http://localhost:8080/reservation/", { headers }),
+        fetch("http://localhost:8080/order/", { headers }),
+      ]);
 
-        const reservationsRaw = Array.isArray(data1)
-          ? data1
-          : Array.isArray(data1.data)
-          ? data1.data
-          : [];
+      const [menuJson, tableJson, reservJson, orderJson] = await Promise.all([
+        menuRes.json(),
+        tableRes.json(),
+        reservRes.json(),
+        orderRes.json(),
+      ]);
 
-        const tablesRaw = Array.isArray(data2)
-          ? data2
-          : Array.isArray(data2.data)
-          ? data2.data
-          : [];
+      const menuData = Array.isArray(menuJson) ? menuJson : menuJson.data || [];
+      const tableData = Array.isArray(tableJson) ? tableJson : tableJson.data || [];
+      const reservData = Array.isArray(reservJson) ? reservJson : reservJson.data || [];
+      const orderData = Array.isArray(orderJson) ? orderJson : orderJson.data || [];
 
-        setReservations(reservationsRaw);
-        setTables(
-          tablesRaw.map((t: any) => ({
-            id: t.ID || t.id,
-            status: t.Status || t.status || 'available',
-          }))
-        );
-      } catch (err: any) {
-        console.error(err);
-        setErrorMsg(err.message || 'Terjadi kesalahan saat memuat data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [token]);
+      // Menu
+      setMenus(menuData.map((m: any) => ({
+        id: m.ID || m.id,
+        name: m.Name || m.name,
+        tagline: m.Tagline || m.tagline || "",
+        image_url: m.ImageURL || m.image_url,
+        price: Number(m.Price || m.price || 0),
+      })));
+
+      // Table
+      setTables(tableData.map((t: any) => ({
+        id: t.ID || t.id,
+        table_no: t.TableNo || t.table_no,
+        status: t.Status || t.status || "available",
+      })));
+
+      // Reservation
+      setReservations(reservData.map((r: any) => ({
+        id: r.ID || r.id,
+        name: r.Name || r.name,
+        phone: r.Phone || r.phone,
+        email: r.Email || r.email,
+        table_id: r.TableID || r.table_id,
+        reservation_date: r.ReservationDate || r.reservation_date,
+        table_fee: Number(r.TableFee || r.table_fee || 0),
+        status: r.Status || r.status,
+      })));
+
+      // Order
+      setOrders(orderData.map((o: any) => ({
+        id: o.ID || o.id,
+        table_id: o.TableID || o.table_id,
+        customer: o.Customer || o.customer,
+        total_amount: Number(o.Total || o.total || 0),
+        payment_method: o.PaymentMethod || o.payment_method || "",
+        status: o.Status || o.status,
+      })));
+    } catch (err) {
+      console.error("❌ Gagal fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===== CONFIRM PAYMENT =====
-  const confirmPayment = async (id: string) => {
-    if (!confirm('Konfirmasi pembayaran reservasi ini?')) return;
+  const confirmPayment = async (id: number) => {
+    if (!confirm("Konfirmasi pembayaran reservasi ini?")) return;
     try {
       const res = await fetch(`http://localhost:8080/reservation/confirm/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Gagal konfirmasi pembayaran.');
-      alert('✅ Pembayaran berhasil dikonfirmasi.');
-      setReservations((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: 'paid' } : r))
-      );
+      if (!res.ok) throw new Error("Gagal konfirmasi pembayaran");
+      alert("✅ Pembayaran dikonfirmasi!");
+      fetchAllData();
     } catch (err) {
-      alert('❌ Gagal konfirmasi pembayaran.');
+      console.error(err);
+      alert("❌ Gagal konfirmasi pembayaran.");
     }
   };
 
   // ===== UPDATE TABLE STATUS =====
-  const updateTableStatus = async (id: string, newStatus: string) => {
+  const updateTableStatus = async (id: string | number | undefined, newStatus: string) => {
+    if (!id) return alert("❌ ID meja tidak valid.");
     try {
       const res = await fetch(`http://localhost:8080/table/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error('Gagal update meja.');
-      setTables((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
-      alert('✅ Status meja diperbarui.');
+      if (!res.ok) throw new Error("Gagal update meja");
+      alert("✅ Status meja diperbarui!");
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === id || t.ID === id ? { ...t, status: newStatus } : t
+        )
+      );
     } catch (err) {
-      alert('❌ Gagal update meja.');
+      console.error(err);
+      alert("❌ Gagal update meja.");
     }
   };
 
-    // ===== LOGOUT =====
-    const handleLogout = () => {
-    // hapus token
+  // ===== LOGOUT =====
+  const handleLogout = () => {
     localStorage.removeItem('token');
-
-    // kasih notifikasi kecil (opsional)
     alert('✅ Logout berhasil!');
-
-    // redirect ke homepage
     router.push('/');
-    };
+  };
 
-
-  // ===== SIDEBAR NAV =====
+  // ===== Sidebar Menu =====
   const menuNav = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'menu', label: 'Menu', icon: Menu },
     { id: 'reservation', label: 'Reservation', icon: ClipboardList },
-    { id: 'table', label: 'Table Status', icon: Table2 },
-    { id: 'order', label: 'Order', icon: Menu },
+    { id: 'table', label: 'Table Management', icon: Table2 },
+    { id: 'order', label: 'Order', icon: FileText },
   ];
 
-  const getBadgeColor = (status: string) =>
+  // ===== Helper =====
+  const getStatusColor = (status: string) =>
     status === 'available'
-      ? 'bg-emerald-100 text-emerald-700'
+      ? 'bg-emerald-500'
       : status === 'booked'
-      ? 'bg-amber-100 text-amber-700'
-      : 'bg-rose-100 text-rose-700';
+      ? 'bg-amber-500'
+      : 'bg-rose-500';
+
+   const viewReservationDetail = async (id: number) => {
+        try {
+            const res = await fetch(`http://localhost:8080/reservation/${id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            });
+
+            if (!res.ok) {
+            const errText = await res.text();
+            console.error("Gagal fetch detail reservasi:", res.status, errText);
+            alert(`❌ Gagal ambil detail reservasi (${res.status})`);
+            return;
+            }
+
+            const raw = await res.json();
+            console.log("Reservation detail:", raw);
+
+            // ✅ Ambil isi dari raw.data
+            const d = raw.data;
+
+            alert(`
+        🔍 Detail Reservasi:
+            Nama: ${d.Name ?? "-"}
+            Meja: ${d.Table?.TableNo ?? d.TableID ?? "-"}
+            Tanggal: ${new Date(d.ReservationDate).toLocaleString("id-ID")}
+            Status: ${d.Status ?? "-"}
+            `);
+        } catch (err) {
+            console.error("❌ Gagal ambil detail:", err);
+            alert("❌ Gagal mengambil detail reservasi (network error).");
+        }
+    };
+
+        // ===== CANCEL RESERVATION =====
+        const cancelReservation = async (id: number) => {
+            if (!confirm("Apakah kamu yakin ingin membatalkan reservasi ini?")) return;
+
+            try {
+                const res = await fetch(`http://localhost:8080/reservation/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!res.ok) throw new Error("Gagal membatalkan reservasi");
+
+                alert("✅ Reservasi berhasil dibatalkan!");
+                fetchAllData(); // refresh data
+            } catch (err) {
+                console.error("Gagal cancel reservasi:", err);
+                alert("❌ Gagal membatalkan reservasi.");
+            }
+        };
+
+        const viewOrderDetail = async (id: number) => {
+            try {
+                const res = await fetch(`http://localhost:8080/order/${id}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                });
+
+                if (!res.ok) {
+                const errText = await res.text();
+                console.error("Gagal fetch order detail:", res.status, errText);
+                alert(`❌ Gagal ambil detail order (${res.status})`);
+                return;
+                }
+
+                const raw = await res.json();
+                console.log("Order detail:", raw);
+
+                // ✅ Ambil isi dari raw.data (karena nested)
+                const d = raw.data;
+
+                alert(`
+            🧾 Detail Order:
+                Customer: ${d.Customer ?? "-"}
+                Meja: ${d.Table?.TableNo ?? d.TableID ?? "-"}
+                Total: Rp ${(d.Total ?? 0).toLocaleString("id-ID")}
+                Status: ${d.Status ?? "-"}
+                `);
+            } catch (err) {
+                console.error("❌ Error viewOrderDetail:", err);
+                alert("❌ Gagal ambil detail order (network error).");
+            }
+        };
+
+
+        const printReceipt = async (id: number) => {
+        try {
+            const res = await fetch(`http://localhost:8080/order/${id}/receipt`, {
+            headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const raw = await res.json();
+            console.log("🧾 Receipt response:", raw);
+
+            if (!res.ok || raw.status !== "success") {
+            alert(`❌ Gagal mencetak struk`);
+            return;
+            }
+
+            // ✅ Ambil path PDF dari backend
+            const receiptPath = raw.receipt;
+            if (!receiptPath) {
+            alert("❌ File struk tidak ditemukan di server.");
+            return;
+            }
+
+            // ✅ Buat URL penuh (pastikan bisa diakses)
+            const cleanPath = receiptPath.replace(/^src\//, ""); // hapus 'src/' dari path
+            const pdfUrl = cleanPath.startsWith("http")
+            ? cleanPath
+            : `http://localhost:8080/${cleanPath}`;
+
+
+            console.log("📄 Downloading from:", pdfUrl);
+
+            // ✅ Download file PDF
+            const a = document.createElement("a");
+            a.href = pdfUrl;
+            a.download = `receipt_${id}.pdf`;
+            a.target = "_blank"; // buka di tab baru juga
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("❌ Error printReceipt:", err);
+            alert("❌ Gagal mencetak struk (network error).");
+        }
+        };
+
 
   // ===== UI =====
   return (
@@ -156,26 +346,25 @@ export default function CashierSection() {
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-gradient-to-b from-amber-600 to-amber-800 text-white transition-all duration-300 flex flex-col shadow-2xl`}
+        } bg-gradient-to-b from-amber-700 to-amber-900 text-white transition-all duration-300 flex flex-col shadow-2xl`}
       >
-        <div className="p-6 flex items-center justify-between border-b border-amber-500">
+        {/* Header */}
+        <div className="p-6 flex items-center justify-between border-b border-amber-600">
           {sidebarOpen && (
             <div className="flex items-center gap-3">
-              <CreditCard size={32} />
+              <CreditCard size={28} />
               <div>
-                <h1 className="text-xl font-bold">Cashier Panel</h1>
+                <h1 className="text-lg font-bold">Cashier Panel</h1>
                 <p className="text-xs text-amber-200">Transaction Center</p>
               </div>
             </div>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-amber-700 rounded-lg"
-          >
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-amber-800 rounded-lg">
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 p-4 space-y-2">
           {menuNav.map((item) => {
             const Icon = item.icon;
@@ -186,7 +375,7 @@ export default function CashierSection() {
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   activeTab === item.id
                     ? 'bg-white text-amber-800 shadow-lg'
-                    : 'text-amber-100 hover:bg-amber-700'
+                    : 'text-amber-100 hover:bg-amber-800'
                 }`}
               >
                 <Icon size={22} />
@@ -196,7 +385,7 @@ export default function CashierSection() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-amber-700 space-y-2">
+        <div className="p-4 border-t border-amber-800 space-y-2">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-amber-100 hover:bg-amber-700 transition-all">
             <Settings size={22} />
             {sidebarOpen && <span>Settings</span>}
@@ -217,131 +406,193 @@ export default function CashierSection() {
           <h2 className="text-3xl font-bold text-gray-800">
             {menuNav.find((m) => m.id === activeTab)?.label || 'Dashboard'}
           </h2>
-          <p className="text-gray-500 mt-1">Kelola transaksi dan meja pelanggan</p>
+          <p className="text-gray-500 mt-1">Kelola transaksi & meja pelanggan</p>
         </header>
 
         <div className="p-8">
-          {/* DASHBOARD */}
-          {activeTab === 'dashboard' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-6 text-white shadow-lg">
-                <p className="text-amber-100 text-sm">Unpaid Reservations</p>
-                <h3 className="text-4xl font-bold mt-2">
-                  {reservations.filter((r) => r.status === 'unpaid').length}
-                </h3>
-              </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-                <p className="text-emerald-100 text-sm">Available Tables</p>
-                <h3 className="text-4xl font-bold mt-2">
-                  {tables.filter((t) => t.status === 'available').length}
-                </h3>
-              </div>
-              <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg">
-                <p className="text-rose-100 text-sm">In Use</p>
-                <h3 className="text-4xl font-bold mt-2">
-                  {tables.filter((t) => t.status === 'in_used').length}
-                </h3>
-              </div>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+              <Loader2 className="animate-spin mb-3" size={32} />
+              Loading data...
             </div>
-          )}
-
-          {/* RESERVATION MANAGEMENT */}
-          {activeTab === 'reservation' && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-amber-500">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <CheckCircle2 className="text-amber-600" /> Reservasi Belum Dibayar
-              </h2>
-
-              {loading ? (
-                <div className="flex flex-col items-center py-12 text-gray-500">
-                  <Loader2 size={32} className="animate-spin mb-3" />
-                  Memuat data...
+          ) : (
+            <>
+              {/* DASHBOARD */}
+              {activeTab === 'dashboard' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-amber-600 text-white rounded-2xl p-6 shadow-lg">
+                    <p>Total Menu</p>
+                    <h3 className="text-4xl font-bold">{menus.length}</h3>
+                  </div>
+                  <div className="bg-emerald-600 text-white rounded-2xl p-6 shadow-lg">
+                    <p>Available Tables</p>
+                    <h3 className="text-4xl font-bold">
+                      {tables.filter((t) => t.status === 'available').length}
+                    </h3>
+                  </div>
+                  <div className="bg-rose-600 text-white rounded-2xl p-6 shadow-lg">
+                    <p>Unpaid Reservations</p>
+                    <h3 className="text-4xl font-bold">
+                      {reservations.filter((r) => r.status === 'unpaid').length}
+                    </h3>
+                  </div>
                 </div>
-              ) : reservations.length === 0 ? (
-                <p className="text-gray-500">Belum ada reservasi.</p>
-              ) : (
-                <ul className="space-y-4">
-                  {reservations
-                    .filter((r) => r.status === 'unpaid')
-                    .map((r) => (
-                      <li
-                        key={r.id}
-                        className="border rounded-xl p-4 bg-amber-50 hover:bg-amber-100 transition-all flex flex-col md:flex-row justify-between md:items-center gap-2"
-                      >
-                        <div>
-                          <p className="font-semibold text-gray-800">{r.customer_name}</p>
-                          <p className="text-sm text-gray-500">
-                            {r.date} • {r.guests} tamu
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => confirmPayment(r.id)}
-                          className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 flex items-center gap-2 transition-all"
-                        >
-                          <CheckCircle2 size={18} /> Konfirmasi
-                        </button>
-                      </li>
-                    ))}
-                </ul>
               )}
-            </div>
-          )}
 
-          {/* TABLE MANAGEMENT */}
-          {activeTab === 'table' && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-amber-500">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Table2 className="text-amber-600" /> Status Meja
-              </h2>
+              {/* MENU */}
+              {activeTab === 'menu' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {menus.map((m) => (
+                    <div key={m.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border">
+                      <img src={m.image_url} alt={m.name} className="w-full h-48 object-cover" />
+                      <div className="p-4">
+                        <h4 className="font-bold">{m.name}</h4>
+                        <p className="text-gray-500 text-sm">{m.tagline}</p>
+                        <p className="text-amber-700 font-semibold mt-2">
+                          Rp {(m.price ?? 0).toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {tables.length === 0 ? (
-                <p className="text-gray-500 text-center py-6">
-                  Belum ada data meja.
-                </p>
-              ) : (
+              {/* RESERVATION */}
+                {activeTab === 'reservation' && (
+                <div className="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 className="text-xl font-bold mb-4">Daftar Reservasi</h3>
+
+                    {reservations.length === 0 ? (
+                    <p className="text-gray-500">Belum ada reservasi.</p>
+                    ) : (
+                    <table className="w-full border rounded-lg overflow-hidden">
+                        <thead>
+                        <tr className="bg-gray-100 text-left">
+                            <th className="p-3 border">ID</th>
+                            <th className="p-3 border">Nama</th>
+                            <th className="p-3 border">Meja</th>
+                            <th className="p-3 border">Tanggal</th>
+                            <th className="p-3 border">Status</th>
+                            <th className="p-3 border text-center">Aksi</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {reservations.map((r) => (
+                            <tr key={r.id} className="border-t hover:bg-gray-50">
+                            <td className="p-3 border">{r.id}</td>
+                            <td className="p-3 border">{r.name}</td>
+                            <td className="p-3 border">{r.table_id}</td>
+                            <td className="p-3 border">{r.reservation_date}</td>
+                            <td className="p-3 border capitalize">{r.status}</td>
+                            <td className="p-3 border text-center space-x-2">
+                                <button
+                                onClick={() => viewReservationDetail(r.id)}
+                                className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                                >
+                                Detail
+                                </button>
+
+                                {r.status.toLowerCase() === 'unpaid' && (
+                                <>
+                                    <button
+                                    onClick={() => confirmPayment(r.id)}
+                                    className="px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 text-sm"
+                                    >
+                                    Konfirmasi
+                                    </button>
+
+                                    <button
+                                    onClick={() => cancelReservation(r.id)}
+                                    className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
+                                    >
+                                    Cancel
+                                    </button>
+                                </>
+                                )}
+                            </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    )}
+                </div>
+                )}
+
+              {/* TABLE MANAGEMENT */}
+              {activeTab === 'table' && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {tables.map((t) => (
-                    <div
-                      key={t.id}
-                      className="p-4 border rounded-xl text-center hover:shadow-lg transition-all"
-                    >
-                      <p className="font-bold text-gray-800 text-lg mb-2">
-                        Meja {t.id}
-                      </p>
+                    <div key={t.id} className="bg-white rounded-2xl shadow p-4 border">
+                      <h4 className="font-bold text-lg mb-2">Meja {t.table_no}</h4>
                       <span
-                        className={`text-xs px-3 py-1 rounded-full font-semibold ${getBadgeColor(
+                        className={`text-xs px-3 py-1 rounded-full text-white font-semibold ${getStatusColor(
                           t.status
                         )}`}
                       >
-                        {t.status === 'available'
-                          ? 'Tersedia'
-                          : t.status === 'booked'
-                          ? 'Dipesan'
-                          : 'Digunakan'}
+                        {t.status}
                       </span>
-
                       <select
                         value={t.status}
                         onChange={(e) => updateTableStatus(t.id, e.target.value)}
-                        className="mt-3 border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-amber-500 outline-none"
+                        className="mt-3 border border-gray-300 rounded-lg p-2 w-full"
                       >
-                        <option value="available">Tersedia</option>
-                        <option value="booked">Dipesan</option>
-                        <option value="in_used">Digunakan</option>
+                        <option value="available">Available</option>
+                        <option value="booked">Booked</option>
+                        <option value="in_used">In Use</option>
                       </select>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* ORDER (placeholder) */}
-          {activeTab === 'order' && (
-            <div className="bg-white p-8 rounded-2xl shadow-lg text-center text-gray-500">
-              <Menu size={48} className="mx-auto mb-4 text-amber-500" />
-              <p>🧾 Halaman <b>Order</b> untuk cashier akan ditambahkan nanti.</p>
-            </div>
+              {/* ORDER */}
+                {activeTab === 'order' && (
+                <div className="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Order</h3>
+                    {orders.length === 0 ? (
+                    <p className="text-gray-500">Belum ada order.</p>
+                    ) : (
+                    <table className="w-full border">
+                        <thead>
+                        <tr className="bg-gray-100 text-left">
+                            <th className="p-3 border">ID</th>
+                            <th className="p-3 border">Meja</th>
+                            <th className="p-3 border">Customer</th>
+                            <th className="p-3 border">Total</th>
+                            <th className="p-3 border">Status</th>
+                            <th className="p-3 border text-center">Aksi</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {orders.map((o) => (
+                            <tr key={o.id} className="border-t hover:bg-gray-50">
+                            <td className="p-3 border">{o.id}</td>
+                            <td className="p-3 border">{o.table_id}</td>
+                            <td className="p-3 border">{o.customer}</td>
+                            <td className="p-3 border">Rp {(o.total_amount ?? 0).toLocaleString('id-ID')}</td>
+                            <td className="p-3 border capitalize">{o.status}</td>
+                            <td className="p-3 border text-center space-x-2">
+                                <button
+                                onClick={() => viewOrderDetail(o.id)}
+                                className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                                >
+                                Detail
+                                </button>
+                                <button
+                                onClick={() => printReceipt(o.id)}
+                                className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                                >
+                                Cetak Struk
+                                </button>
+                            </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    )}
+                </div>
+                )}
+            </>
           )}
         </div>
       </main>
