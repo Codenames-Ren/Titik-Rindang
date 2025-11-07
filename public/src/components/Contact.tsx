@@ -271,9 +271,15 @@ const ContactSection = () => {
               <button className="bg-white text-green-800 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl">
                 Reservasi Sekarang
               </button>
-              <button className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-800 transition-all duration-200">
+              <a
+                href="https://maps.app.goo.gl/gMrneHYa329Y7vM16"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-800 transition-all duration-200 inline-block"
+              >
                 Lihat Lokasi
-              </button>
+              </a>
+
             </div>
           </div>
         </div>
