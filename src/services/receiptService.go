@@ -24,7 +24,6 @@ func (s *ReceiptService) GenerateReceipt(order *models.Order) (string, error) {
 	pageWidth := gopdf.PageSizeA4.W
 	leftMargin := 50.0
 	rightMargin := 50.0
-	pageContentWidth := pageWidth - leftMargin - rightMargin
 
 	fontPath := "src/fonts/Roboto-Regular.ttf"
 	boldPath := "src/fonts/Roboto-Bold.ttf"
@@ -50,16 +49,20 @@ func (s *ReceiptService) GenerateReceipt(order *models.Order) (string, error) {
 	pdf.SetX(leftMargin)
 	pdf.Cell(nil, fmt.Sprintf("Order ID  : %d", order.ID))
 	pdf.Br(14)
+
 	pdf.SetX(leftMargin)
 	pdf.Cell(nil, fmt.Sprintf("Tanggal   : %s", order.CreatedAt.Format("02 Jan 2006 15:04")))
 	pdf.Br(14)
+
+	// ✅ FIXED: nomor meja sesuai model (Table.TableNo)
 	pdf.SetX(leftMargin)
 	tableNumber := "-"
-	if order.Table.ID != 0 {
-		tableNumber = fmt.Sprintf("%d", order.Table.Number)
+	if order.Table.TableNo != 0 {
+		tableNumber = fmt.Sprintf("%d", order.Table.TableNo)
 	}
 	pdf.Cell(nil, fmt.Sprintf("Meja      : %s", tableNumber))
 	pdf.Br(14)
+
 	pdf.SetX(leftMargin)
 	pdf.Cell(nil, fmt.Sprintf("Customer  : %s", order.Customer))
 	pdf.Br(20)
@@ -117,20 +120,18 @@ func (s *ReceiptService) GenerateReceipt(order *models.Order) (string, error) {
 }
 
 // ===============================================================
-// 🔹 Helper: Gambar garis horizontal
+// Helpers
 func drawLine(pdf *gopdf.GoPdf, x1, x2 float64) {
 	y := pdf.GetY()
 	pdf.SetLineWidth(0.3)
 	pdf.Line(x1, y, x2, y)
 }
 
-// 🔹 Helper: Garis horizontal di posisi Y tertentu
 func drawLineAt(pdf *gopdf.GoPdf, x1, x2, y float64) {
 	pdf.SetLineWidth(0.3)
 	pdf.Line(x1, y, x2, y)
 }
 
-// 🔹 Helper: Header tabel
 func drawTableHeader(pdf *gopdf.GoPdf, startX, startY float64, widths []float64) {
 	headers := []string{"Item", "Qty", "Harga", "Subtotal"}
 	rowHeight := 20.0
@@ -146,7 +147,6 @@ func drawTableHeader(pdf *gopdf.GoPdf, startX, startY float64, widths []float64)
 	}
 }
 
-// 🔹 Helper: Baris data
 func drawTableRow(pdf *gopdf.GoPdf, startX, y float64, widths []float64, height float64, values []string) {
 	x := startX
 	for i, v := range values {
@@ -158,7 +158,6 @@ func drawTableRow(pdf *gopdf.GoPdf, startX, y float64, widths []float64, height 
 	}
 }
 
-// 🔹 Potong string panjang
 func truncate(s string, max int) string {
 	if len(s) > max-3 {
 		return s[:max-3] + "..."
