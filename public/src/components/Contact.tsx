@@ -75,7 +75,7 @@ const ContactSection = () => {
     {
       icon: <Mail className="w-6 h-6" />,
       title: "Email",
-      details: ["info@rindangcoffee.com", "order@rindangcoffee.com"],
+      details: ["rindangtitik@gmail.com"],
       color: "text-green-800"
     },
     {
