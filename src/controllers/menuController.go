@@ -107,67 +107,67 @@ func CreateMenu(c *gin.Context) {
 
 // Update menu
 func UpdateMenu(c *gin.Context) {
-	id := c.Param("id")
-	var menu models.Menu
+    id := c.Param("id")
+    var menu models.Menu
 
-	if err := database.DB.First(&menu, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "menu not found"})
-		return
-	}
+    if err := database.DB.First(&menu, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "menu not found"})
+        return
+    }
 
-	name := c.PostForm("name")
-	tagline := c.PostForm("tagline")
-	priceStr := c.PostForm("price")
+    name := c.PostForm("name")
+    tagline := c.PostForm("tagline")
+    priceStr := c.PostForm("price")
 
-	if name != "" {
-		menu.Name = name
-	}
-	if tagline != "" {
-		menu.Tagline = tagline
-	}
-	if priceStr != "" {
-		price, err := strconv.ParseFloat(priceStr, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid price format"})
-			return
-		}
-		menu.Price = price
-	}
+    if name != "" {
+        menu.Name = name
+    }
+    if tagline != "" {
+        menu.Tagline = tagline
+    }
+    if priceStr != "" {
+        price, err := strconv.ParseFloat(priceStr, 64)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "invalid price format"})
+            return
+        }
+        menu.Price = price
+    }
 
-	file, err := c.FormFile("image")
-	if err == nil {
-		if menu.ImageURL != "" {
-			oldPath := "." + menu.ImageURL
-			_ = os.Remove(oldPath)
-		}
+    file, err := c.FormFile("image")
+    if err == nil {
+        if menu.ImageURL != "" {
+            oldPath := "." + menu.ImageURL // contoh: ./uploads/menu/xxxxx.jpg
+            _ = os.Remove(oldPath)
+        }
 
-		uploadFolder := "src/uploads/menu"
-		if err := os.MkdirAll(uploadFolder, os.ModePerm); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to create upload folder"})
-			return
-		}
+        uploadFolder := "src/uploads/menu"
+        if err := os.MkdirAll(uploadFolder, os.ModePerm); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to create upload folder"})
+            return
+        }
 
-		filename := time.Now().Format("20060102150405") + "_" + filepath.Base(file.Filename)
-		filePath := filepath.Join(uploadFolder, filename)
+        filename := time.Now().Format("20060102150405") + "_" + filepath.Base(file.Filename)
+        filePath := filepath.Join(uploadFolder, filename)
 
-		if err := c.SaveUploadedFile(file, filePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to save image"})
-			return
-		}
+        if err := c.SaveUploadedFile(file, filePath); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to save image"})
+            return
+        }
 
-		menu.ImageURL = "/" + filePath
-	}
+        menu.ImageURL = "/uploads/menu/" + filename
+    }
 
-	if err := database.DB.Save(&menu).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to update menu"})
-		return
-	}
+    if err := database.DB.Save(&menu).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "failed to update menu"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "menu updated successfully",
-		"data":    menu,
-	})
+    c.JSON(http.StatusOK, gin.H{
+        "status":  "success",
+        "message": "menu updated successfully",
+        "data":    menu,
+    })
 }
 
 // Delete menu
