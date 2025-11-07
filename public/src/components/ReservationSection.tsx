@@ -3,46 +3,50 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Clock, Users, CreditCard, CheckCircle, Coffee, MapPin, X, Check, Sparkles } from 'lucide-react';
 
-type TableStatus = 'occupied' | 'reserved' | 'free';
-
 interface Table {
   id: string;
   label: string;
   seats: number;
   area: 'Indoor' | 'Outdoor';
   coords: [number, number, number];
+  backendId?: number;
+  status?: 'Available' | 'Occupied' | 'Reserved';
 }
 
 const IMAGE_SRC = './images/DenahMeja.png';
 const BARCODE_IMAGE = './images/barcode-payment.png';
-const STORAGE_KEY = 'table-map-statuses-v1';
 const RESERVATION_FEE = 20000;
+const API_BASE_URL = 'http://localhost:8080';
 
-const DEFAULT_TABLES: Table[] = [
-  { id: 'I6-1', label: 'Meja Indoor (6 kursi) - 1', seats: 6, area: 'Indoor', coords: [180,158,35] },
-  { id: 'I6-2', label: 'Meja Indoor (6 kursi) - 2', seats: 6, area: 'Indoor', coords: [180,295,35] },
-  { id: 'I6-3', label: 'Meja Indoor (6 kursi) - 3', seats: 6, area: 'Indoor', coords: [180,428,35] },
-  { id: 'I4-1', label: 'Meja Indoor (4 kursi) - 1', seats: 4, area: 'Indoor', coords: [536,457,23] },
-  { id: 'I4-2', label: 'Meja Indoor (4 kursi) - 2', seats: 4, area: 'Indoor', coords: [680,455,23] },
-  { id: 'I2-1', label: 'Meja Indoor (2 kursi) - 1', seats: 2, area: 'Indoor', coords: [838,242,19] },
-  { id: 'I2-2', label: 'Meja Indoor (2 kursi) - 2', seats: 2, area: 'Indoor', coords: [838,318,19] },
-  { id: 'I2-3', label: 'Meja Indoor (2 kursi) - 3', seats: 2, area: 'Indoor', coords: [838,393,19] },
-  { id: 'I2-4', label: 'Meja Indoor (2 kursi) - 4', seats: 2, area: 'Indoor', coords: [836,468,19] },
-  { id: 'I7-1', label: 'Meja Indoor (7 kursi)', seats: 7, area: 'Indoor', coords: [837,136,28] },
-  { id: 'O4-1', label: 'Meja Outdoor (4 kursi) - 1', seats: 4, area: 'Outdoor', coords: [210,588,24] },
-  { id: 'O4-2', label: 'Meja Outdoor (4 kursi) - 2', seats: 4, area: 'Outdoor', coords: [511,590,24] },
-  { id: 'O4-3', label: 'Meja Outdoor (4 kursi) - 3', seats: 4, area: 'Outdoor', coords: [671,592,24] },
-  { id: 'O4-4', label: 'Meja Outdoor (4 kursi) - 4', seats: 4, area: 'Outdoor', coords: [842,588,24] },
-];
+// Mapping coords untuk visualisasi denah (tetap di frontend)
+const DEFAULT_TABLES: Record<number, Table> = {
+  1: { id: "I6-1", label: "Meja Indoor (6 kursi) - 1", seats: 6, area: "Indoor", coords: [180,158,35] },
+  2: { id: "I6-2", label: "Meja Indoor (6 kursi) - 2", seats: 6, area: "Indoor", coords: [180,295,35] },
+  3: { id: "I6-3", label: "Meja Indoor (6 kursi) - 3", seats: 6, area: "Indoor", coords: [180,428,35] },
+  4: { id: "I4-1", label: "Meja Indoor (4 kursi) - 1", seats: 4, area: "Indoor", coords: [536,457,23] },
+  5: { id: "I4-2", label: "Meja Indoor (4 kursi) - 2", seats: 4, area: "Indoor", coords: [680,455,23] },
+  6: { id: "I2-1", label: "Meja Indoor (2 kursi) - 1", seats: 2, area: "Indoor", coords: [838,242,19] },
+  7: { id: "I2-2", label: "Meja Indoor (2 kursi) - 2", seats: 2, area: "Indoor", coords: [838,318,19] },
+  8: { id: "I2-3", label: "Meja Indoor (2 kursi) - 3", seats: 2, area: "Indoor", coords: [838,393,19] },
+  9: { id: "I2-4", label: "Meja Indoor (2 kursi) - 4", seats: 2, area: "Indoor", coords: [836,468,19] },
+  10: { id: "I7-1", label: "Meja Indoor (7 kursi)", seats: 7, area: "Indoor", coords: [837,136,28] },
+  11: { id: "O4-1", label: "Meja Outdoor (4 kursi) - 1", seats: 4, area: "Outdoor", coords: [210,588,24] },
+  12: { id: "O4-2", label: "Meja Outdoor (4 kursi) - 2", seats: 4, area: "Outdoor", coords: [511,590,24] },
+  13: { id: "O4-3", label: "Meja Outdoor (4 kursi) - 3", seats: 4, area: "Outdoor", coords: [671,592,24] },
+  14: { id: "O4-4", label: "Meja Outdoor (4 kursi) - 4", seats: 4, area: "Outdoor", coords: [842,588,24] },
+};
 
-const statusColor = (s: TableStatus) => {
-  switch (s) {
-    case 'occupied': return '#f87171';
-    case 'reserved': return '#fbbf24';
-    case 'free': return '#34d399';
-    default: return '#9ca3af';
+const mapBackendStatusToFrontend = (status: string): "Available" | "Reserved" | "Occupied" => {
+  switch (status?.toLowerCase()) {
+    case "booked":
+      return "Reserved";
+    case "in_use":
+      return "Occupied";
+    default:
+      return "Available";
   }
 };
+
 
 const ReservationSection = () => {
   const [formData, setFormData] = useState({
@@ -57,7 +61,8 @@ const ReservationSection = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
-  const [statuses, setStatuses] = useState<Record<string, TableStatus>>({});
+  const [tables, setTables] = useState<Table[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showTableMap, setShowTableMap] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
@@ -65,6 +70,7 @@ const ReservationSection = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [reservationId, setReservationId] = useState<number | null>(null);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -96,10 +102,81 @@ const ReservationSection = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch tables from backend (initial load)
+useEffect(() => {
+  const fetchTables = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/table/`);
+      const json = await res.json();
+      const rawTables = json?.data ?? [];
+
+      if (!Array.isArray(rawTables)) return;
+
+      const mappedTables: Table[] = rawTables
+        .map((t: any) => {
+          const tableNo = t.table_no ?? t.TableNo;
+          const backendTable = DEFAULT_TABLES[tableNo];
+          if (!backendTable) return null;
+
+          return {
+            ...backendTable,
+            backendId: t.ID ?? t.id,
+            status: mapBackendStatusToFrontend(t.status ?? t.Status),
+          };
+        })
+        .filter(Boolean) as Table[];
+
+      setTables(mappedTables);
+    } catch (err) {
+      console.error("Failed to fetch tables:", err);
+    }
+  };
+
+  fetchTables();
+}, []);
+
+// ---------- Fetch available tables again when date/time changes ----------
+
+useEffect(() => {
+  if (!formData.date || !formData.time) return;
+
+  const fetchAvailableTables = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/table/`);
+      const json = await res.json();
+      const rawTables = json?.data ?? [];
+
+      const mappedTables: Table[] = rawTables
+        .map((t: any) => {
+          const tableNo = t.table_no ?? t.TableNo;
+          const backendTable = DEFAULT_TABLES[tableNo];
+          if (!backendTable) return null;
+
+          return {
+            ...backendTable,
+            backendId: t.ID ?? t.id,
+            status: mapBackendStatusToFrontend(t.status ?? t.Status),
+          };
+        })
+        .filter(Boolean) as Table[];
+
+      setTables(mappedTables);
+    } catch (err) {
+      console.error("Failed to fetch available tables:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAvailableTables();
+}, [formData.date, formData.time]);
+
 
   // Generate available time slots based on current time
   const getAvailableTimeSlots = () => {
@@ -109,14 +186,12 @@ const ReservationSection = () => {
       '18:00', '19:00', '20:00'
     ];
 
-    // If selected date is today, filter out past time slots
     if (formData.date === new Date().toISOString().split('T')[0]) {
       const currentHour = currentDateTime.getHours();
       const currentMinute = currentDateTime.getMinutes();
       
       return slots.filter(slot => {
         const [slotHour] = slot.split(':').map(Number);
-        // Only show slots that are at least 1 hour in the future
         return slotHour > currentHour || (slotHour === currentHour && currentMinute < 30);
       });
     }
@@ -124,29 +199,9 @@ const ReservationSection = () => {
     return slots;
   };
 
-  // Get minimum date (today)
   const getMinDate = () => {
     return new Date().toISOString().split('T')[0];
   };
-
-  // Load table statuses from localStorage
-  useEffect(() => {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as Record<string, TableStatus>;
-        setStatuses(parsed);
-      } catch {
-        const initial: Record<string, TableStatus> = {};
-        DEFAULT_TABLES.forEach(t => initial[t.id] = 'free');
-        setStatuses(initial);
-      }
-    } else {
-      const initial: Record<string, TableStatus> = {};
-      DEFAULT_TABLES.forEach(t => initial[t.id] = 'free');
-      setStatuses(initial);
-    }
-  }, []);
 
   // Image loading handler with resize support
   useEffect(() => {
@@ -171,13 +226,11 @@ const ReservationSection = () => {
     if (!showTableMap) return;
     
     const handleResize = () => {
-      // Force re-render of table positions
       setImageLoaded(false);
       setTimeout(() => setImageLoaded(true), 50);
     };
     
     window.addEventListener('resize', handleResize);
-    // Initial calculation
     setTimeout(handleResize, 100);
     
     return () => window.removeEventListener('resize', handleResize);
@@ -186,7 +239,6 @@ const ReservationSection = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // If date changes, reset time if it's no longer valid
     if (name === 'date' && formData.time) {
       const availableSlots = getAvailableTimeSlots();
       if (value === new Date().toISOString().split('T')[0]) {
@@ -236,15 +288,15 @@ const ReservationSection = () => {
     const clickY = e.clientY - rect.top;
     const scale = getScale();
 
-    for (const t of DEFAULT_TABLES) {
+    for (const t of tables) {
       const [cx, cy, r] = t.coords;
       const dx = clickX / scale - cx;
       const dy = clickY / scale - cy;
       if (dx * dx + dy * dy <= r * r) {
-        if (statuses[t.id] === 'free') {
+        if (t.status === 'Available') {
           setSelectedTable(t);
         } else {
-          alert(`Meja ini ${statuses[t.id] === 'occupied' ? 'sedang terisi' : 'sudah dipesan'}. Silakan pilih meja lain.`);
+          alert(`Meja ini ${t.status === 'Occupied' ? 'sedang terisi' : 'sudah dipesan'}. Silakan pilih meja lain.`);
         }
         return;
       }
@@ -260,23 +312,97 @@ const ReservationSection = () => {
     setCurrentStep(3);
   };
 
-  const handlePayment = () => {
-    setShowPaymentModal(true);
+  const handlePayment = async () => {
+    if (!selectedTable) {
+      alert('Silakan pilih meja terlebih dahulu');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const reservationDateTime = new Date(`${formData.date}T${formData.time}:00+07:00`);
+      
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        table_id: selectedTable.backendId,
+        reservation_date: reservationDateTime.toISOString(),
+      };
+
+      const response = await fetch(`${API_BASE_URL}/reservation/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setReservationId(data.data.ID);
+        setShowPaymentModal(true);
+      } else {
+        throw new Error(data.message || 'Failed to create reservation');
+      }
+    } catch (error) {
+      console.error('Reservation error:', error);
+      alert('Gagal membuat reservasi. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const confirmPayment = () => {
-    if (!selectedTable) return;
+  const confirmPayment = async () => {
+    if (!reservationId) {
+      alert('Reservation ID tidak ditemukan');
+      return;
+    }
 
-    const newStatuses = { ...statuses, [selectedTable.id]: 'reserved' as TableStatus };
-    setStatuses(newStatuses);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newStatuses));
+    setLoading(true);
 
-    setPaymentConfirmed(true);
-    setShowPaymentModal(false);
-    
-    setTimeout(() => {
-      setIsSubmitted(true);
-    }, 500);
+    try {
+      const response = await fetch(`${API_BASE_URL}/reservation/confirm/${reservationId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setPaymentConfirmed(true);
+        setShowPaymentModal(false);
+        
+        // Refresh tables data
+        const tablesResponse = await fetch(`${API_BASE_URL}/table/`);
+        const tablesData = await tablesResponse.json();
+        
+        if (tablesData.status === 'success') {
+          const mappedTables: Table[] = tablesData.data.map((t: any) => ({
+            id: t.table_number,
+            label: `Meja ${t.location} (${t.capacity} kursi) - ${t.table_number}`,
+            seats: t.capacity,
+            area: t.location as 'Indoor' | 'Outdoor',
+            coords: DEFAULT_TABLES[t.table_number] || [0, 0, 20],
+            backendId: t.ID,
+            status: t.status
+          }));
+          setTables(mappedTables);
+        }
+        
+        setTimeout(() => {
+          setIsSubmitted(true);
+        }, 500);
+      } else {
+        throw new Error(data.message || 'Failed to confirm payment');
+      }
+    } catch (error) {
+      console.error('Payment confirmation error:', error);
+      alert('Gagal mengkonfirmasi pembayaran. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetReservation = () => {
@@ -284,6 +410,7 @@ const ReservationSection = () => {
     setCurrentStep(1);
     setSelectedTable(null);
     setPaymentConfirmed(false);
+    setReservationId(null);
     setFormData({
       name: '',
       email: '',
@@ -294,8 +421,17 @@ const ReservationSection = () => {
     });
   };
 
-  const availableTables = DEFAULT_TABLES.filter(t => statuses[t.id] === 'free');
+const availableTables = tables; // tampilkan semua
   const availableTimeSlots = getAvailableTimeSlots();
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'Occupied': return '#f87171';
+      case 'Reserved': return '#fbbf24';
+      case 'Available': return '#34d399';
+      default: return '#9ca3af';
+    }
+  };
 
   if (isSubmitted) {
     return (
@@ -403,7 +539,6 @@ const ReservationSection = () => {
           <div className={`inline-block mb-4 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <br /><br />
             <span className="text-green-800 text-sm font-semibold tracking-wider uppercase bg-green-100 px-4 py-2 rounded-full inline-flex items-center gap-2">
-              {/* <Sparkles className="w-4 h-4" /> */}
               Reservasi Meja
             </span>
           </div>
@@ -556,6 +691,11 @@ const ReservationSection = () => {
                   {!formData.date && (
                     <p className="text-xs text-gray-500 mt-1">Pilih tanggal terlebih dahulu</p>
                   )}
+                  {loading && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-2">
+                      <span className="animate-spin">⏳</span> Memuat ketersediaan meja...
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -586,14 +726,14 @@ const ReservationSection = () => {
                   </button>
                   <button
                     onClick={handleNextStep}
-                    disabled={!formData.date || !formData.time || availableTimeSlots.length === 0}
+                    disabled={!formData.date || !formData.time || availableTimeSlots.length === 0 || loading}
                     className={`flex-1 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                      formData.date && formData.time && availableTimeSlots.length > 0
+                      formData.date && formData.time && availableTimeSlots.length > 0 && !loading
                         ? 'bg-green-800 text-white hover:bg-green-900 hover:shadow-xl hover:scale-105'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
-                    Pilih Meja
+                    {loading ? 'Memuat...' : 'Pilih Meja'}
                   </button>
                 </div>
               </div>
@@ -660,10 +800,15 @@ const ReservationSection = () => {
                   </button>
                   <button
                     onClick={handlePayment}
-                    className="flex-1 bg-green-800 text-white py-4 rounded-xl font-semibold hover:bg-green-900 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-105"
+                    disabled={loading}
+                    className={`flex-1 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center ${
+                      loading 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-green-800 text-white hover:bg-green-900 hover:scale-105'
+                    }`}
                   >
                     <CreditCard className="w-5 h-5 mr-2" />
-                    Bayar Sekarang
+                    {loading ? 'Memproses...' : 'Bayar Sekarang'}
                   </button>
                 </div>
               </div>
@@ -696,6 +841,15 @@ const ReservationSection = () => {
               </div>
 
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+                {loading && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-30">
+                    <div className="text-center">
+                      <div className="animate-spin text-4xl mb-2">⏳</div>
+                      <p className="text-gray-600 font-semibold">Memuat data meja...</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid lg:grid-cols-3 gap-6">
                   {/* Map Section */}
                   <div className="lg:col-span-2" ref={containerRef}>
@@ -710,13 +864,13 @@ const ReservationSection = () => {
                       />
 
                       {/* Table Markers - Responsive */}
-                      {imageLoaded && DEFAULT_TABLES.map(t => {
+                      {imageLoaded && tables.map(t => {
                         const [cx, cy, r] = t.coords;
                         const scale = getScale();
                         const left = cx * scale;
                         const top = cy * scale;
                         const size = r * 2 * scale;
-                        const s = statuses[t.id] || 'free';
+                        const s = t.status || 'Available';
                         
                         return (
                           <button
@@ -724,10 +878,10 @@ const ReservationSection = () => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (s === 'free') {
+                              if (s === 'Available') {
                                 setSelectedTable(t);
                               } else {
-                                alert(`Meja ini ${s === 'occupied' ? 'sedang terisi' : 'sudah dipesan'}. Silakan pilih meja lain.`);
+                                alert(`Meja ini ${s === 'Occupied' ? 'sedang terisi' : 'sudah dipesan'}. Silakan pilih meja lain.`);
                               }
                             }}
                             title={`${t.label} – ${t.seats} kursi – ${t.area}`}
@@ -741,13 +895,13 @@ const ReservationSection = () => {
                               borderRadius: '9999px',
                               border: selectedTable?.id === t.id ? '4px solid #166534' : '3px solid rgba(255,255,255,0.9)',
                               boxShadow: selectedTable?.id === t.id ? '0 0 0 4px rgba(22, 101, 52, 0.3), 0 8px 24px rgba(0,0,0,0.2)' : '0 6px 18px rgba(0,0,0,0.12)',
-                              backgroundColor: statusColor(s),
+                              backgroundColor: getStatusColor(s),
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               padding: 0,
-                              cursor: s === 'free' ? 'pointer' : 'not-allowed',
-                              opacity: s === 'free' ? 1 : 0.6,
+                              cursor: s === 'Available' ? 'pointer' : 'not-allowed',
+                              opacity: s === 'Available' ? 1 : 0.6,
                             }}
                           >
                             <span className="text-xs font-semibold text-white drop-shadow-sm select-none">
@@ -766,24 +920,24 @@ const ReservationSection = () => {
                       </h4>
                       <div className="grid grid-cols-3 gap-3">
                         <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
-                          <span style={{ width: 16, height: 16, background: statusColor('free'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <span style={{ width: 16, height: 16, background: getStatusColor('Available'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                           <div>
                             <div className="text-xs font-medium text-gray-900">Tersedia</div>
-                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'free').length} meja</div>
+                            <div className="text-xs text-gray-500">{tables.filter(t => t.status === 'Available').length} meja</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
-                          <span style={{ width: 16, height: 16, background: statusColor('reserved'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <span style={{ width: 16, height: 16, background: getStatusColor('Reserved'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                           <div>
                             <div className="text-xs font-medium text-gray-900">Dipesan</div>
-                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'reserved').length} meja</div>
+                            <div className="text-xs text-gray-500">{tables.filter(t => t.status === 'Reserved').length} meja</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 bg-white p-2 rounded-lg">
-                          <span style={{ width: 16, height: 16, background: statusColor('occupied'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                          <span style={{ width: 16, height: 16, background: getStatusColor('Occupied'), borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                           <div>
                             <div className="text-xs font-medium text-gray-900">Terisi</div>
-                            <div className="text-xs text-gray-500">{Object.values(statuses).filter(s => s === 'occupied').length} meja</div>
+                            <div className="text-xs text-gray-500">{tables.filter(t => t.status === 'Occupied').length} meja</div>
                           </div>
                         </div>
                       </div>
@@ -900,7 +1054,7 @@ const ReservationSection = () => {
                           ))
                         ) : (
                           <div className="text-center py-4 text-gray-500 text-sm">
-                            Tidak ada meja tersedia
+                            Tidak ada meja tersedia untuk waktu ini
                           </div>
                         )}
                       </div>
@@ -927,7 +1081,7 @@ const ReservationSection = () => {
         </div>
       )}
 
-      {/* Payment Modal with Barcode - Improved Design */}
+      {/* Payment Modal with Barcode */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="fixed top-0 left-0 w-full h-full bg-black/60 backdrop-blur-md animate-fadeIn" onClick={() => setShowPaymentModal(false)} />
@@ -938,7 +1092,7 @@ const ReservationSection = () => {
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
               <div className="relative z-10">
                 <h3 className="text-3xl font-bold flex items-center gap-3 mb-2">
-                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm mb-110">
+                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
                     <CreditCard className="w-7 h-7" />
                   </div>
                   Pembayaran Reservasi
@@ -948,7 +1102,7 @@ const ReservationSection = () => {
             </div>
 
             <div className="p-8">
-              {/* Barcode Section - Centered and Spacious */}
+              {/* Barcode Section */}
               <div className="bg-white rounded-2xl p-8 mb-6 shadow-inner border-2 border-gray-100">
                 <div className="text-center">
                   <div className="inline-block bg-white p-6 rounded-2xl shadow-lg mb-4">
@@ -979,7 +1133,7 @@ const ReservationSection = () => {
                 </div>
               </div>
 
-              {/* Payment Amount - Prominent */}
+              {/* Payment Amount */}
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 mb-6 border-2 border-green-200 shadow-sm">
                 <div className="flex justify-between items-center">
                   <div>
@@ -994,7 +1148,7 @@ const ReservationSection = () => {
                 </div>
               </div>
 
-              {/* Instructions - Clear and Organized */}
+              {/* Instructions */}
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-5 mb-6">
                 <div className="flex items-start gap-3">
                   <div className="bg-yellow-400 p-2 rounded-lg mt-0.5">
@@ -1028,20 +1182,26 @@ const ReservationSection = () => {
                 </div>
               </div>
 
-              {/* Action Buttons - Modern and Clear */}
+              {/* Action Buttons */}
               <div className="flex gap-4">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                  disabled={loading}
+                  className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Batal
                 </button>
                 <button
                   onClick={confirmPayment}
-                  className="flex-1 bg-gradient-to-r from-green-800 to-green-700 hover:from-green-900 hover:to-green-800 text-white py-4 rounded-xl font-bold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 hover:scale-105"
+                  disabled={loading}
+                  className={`flex-1 py-4 rounded-xl font-bold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 ${
+                    loading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-green-800 to-green-700 hover:from-green-900 hover:to-green-800 text-white hover:scale-105'
+                  }`}
                 >
                   <CheckCircle className="w-5 h-5" />
-                  Konfirmasi Pembayaran
+                  {loading ? 'Memproses...' : 'Konfirmasi Pembayaran'}
                 </button>
               </div>
 
