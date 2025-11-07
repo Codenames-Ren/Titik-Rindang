@@ -15,7 +15,6 @@ interface Table {
 
 const IMAGE_SRC = './images/DenahMeja.png';
 const BARCODE_IMAGE = './images/barcode-payment.png';
-const RESERVATION_FEE = 20000;
 const API_BASE_URL = 'http://localhost:8080';
 
 // Mapping coords untuk visualisasi denah (tetap di frontend)
@@ -71,10 +70,29 @@ const ReservationSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [reservationId, setReservationId] = useState<number | null>(null);
+  const [reservationFee, setReservationFee] = useState<number>(0);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = useRef(null);
+
+
+  // 🔹 🧠 Taruh useEffect untuk fetch reservation fee di sini
+  useEffect(() => {
+    const fetchReservationFee = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/reservation/fee");
+        const json = await res.json();
+        const fee = Number(json?.data?.reservation_fee || 0);
+        setReservationFee(fee);
+        console.log("✅ Reservation Fee:", fee);
+      } catch (err) {
+        console.error("❌ Gagal ambil reservation fee:", err);
+      }
+    };
+
+    fetchReservationFee();
+  }, []);
 
   // Intersection Observer for animations
   useEffect(() => {
@@ -479,7 +497,7 @@ const availableTables = tables; // tampilkan semua
                 )}
                 <div className="flex justify-between border-t border-green-200 pt-3 mt-3">
                   <span className="text-gray-900 font-bold">Biaya Reservasi:</span>
-                  <span className="font-bold text-green-700">Rp {RESERVATION_FEE.toLocaleString('id-ID')}</span>
+                  <span className="font-bold text-green-700">Rp {reservationFee.toLocaleString('id-ID')}</span>
                 </div>
               </div>
             </div>
@@ -545,8 +563,8 @@ const availableTables = tables; // tampilkan semua
           <h2 className={`text-4xl lg:text-5xl font-bold text-gray-900 mb-4 transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             Pesan Tempat Anda
           </h2>
-          <p className={`text-gray-600 text-lg max-w-2xl mx-auto transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            Reservasi meja dengan biaya Rp 20.000 untuk memastikan tempat Anda tersedia
+          <p className={`text-gray-600 text-lg max-w-2xl mx-auto`}>
+            Reservasi meja dengan biaya Rp {reservationFee.toLocaleString('id-ID')} untuk memastikan tempat Anda tersedia
           </p>
         </div>
 
@@ -770,7 +788,7 @@ const availableTables = tables; // tampilkan semua
                     )}
                     <div className="border-t-2 border-green-200 pt-3 mt-3 flex justify-between">
                       <span className="text-gray-900 font-bold text-lg">Biaya Reservasi:</span>
-                      <span className="font-bold text-green-700 text-xl">Rp {RESERVATION_FEE.toLocaleString('id-ID')}</span>
+                      <span className="font-bold text-green-700 text-xl">Rp {reservationFee.toLocaleString('id-ID')}</span>
                     </div>
                   </div>
                 </div>
@@ -1008,7 +1026,7 @@ const availableTables = tables; // tampilkan semua
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-gray-900">Biaya Reservasi</span>
                           <span className="text-xl font-bold text-green-800">
-                            Rp {RESERVATION_FEE.toLocaleString('id-ID')}
+                          Rp {reservationFee.toLocaleString('id-ID')}
                           </span>
                         </div>
                       </div>
@@ -1142,7 +1160,7 @@ const availableTables = tables; // tampilkan semua
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-green-800">
-                      Rp {RESERVATION_FEE.toLocaleString('id-ID')}
+                    Rp {reservationFee.toLocaleString('id-ID')}
                     </p>
                   </div>
                 </div>
