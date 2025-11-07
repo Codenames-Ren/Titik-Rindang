@@ -1,5 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 import { Coffee, Plus, Trash2, Users, Table2, Edit, Image, Menu, X, LogOut, Settings, BarChart3 } from 'lucide-react';
 
 function UserRegisterForm() {
@@ -198,6 +200,13 @@ const [newItem, setNewItem] = useState<NewMenuItem>({
     .catch((err) => console.error("❌ Gagal fetch menu:", err));
 }, []);
 
+  const router = useRouter();
+  
+      const handleLogout = () => {
+          localStorage.removeItem("token"); // hapus token
+          alert("✅ Logout berhasil!");
+          router.push("/"); // redirect ke homepage
+      };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -634,7 +643,9 @@ const getStatusText = (status: TableStatus) =>
             <Settings size={22} />
             {sidebarOpen && <span>Settings</span>}
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-red-600 transition-all">
+          <button 
+         onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-red-600 transition-all">
             <LogOut size={22} />
             {sidebarOpen && <span>Logout</span>}
           </button>

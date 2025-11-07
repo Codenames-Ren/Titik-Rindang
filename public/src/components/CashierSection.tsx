@@ -121,11 +121,18 @@ export default function CashierSection() {
     }
   };
 
-  // ===== LOGOUT =====
-  const handleLogout = () => {
+    // ===== LOGOUT =====
+    const handleLogout = () => {
+    // hapus token
     localStorage.removeItem('token');
-    router.push('/login');
-  };
+
+    // kasih notifikasi kecil (opsional)
+    alert('✅ Logout berhasil!');
+
+    // redirect ke homepage
+    router.push('/');
+    };
+
 
   // ===== SIDEBAR NAV =====
   const menuNav = [
