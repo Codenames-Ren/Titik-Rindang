@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HeaderWrapper from "@/components/HeadWrapper"; // 🧠 Client wrapper
 
+
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Titik Rindang Coffee",
   description: "Premium Coffee Experience",
+  icons: {
+  icon: '/favicon.ico?v=2',
+}
+
 };
 
 export default function RootLayout({
