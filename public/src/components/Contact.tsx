@@ -54,7 +54,7 @@ const ContactSection = () => {
     {
       icon: <MapPin className="w-6 h-6" />,
       title: "Alamat",
-      details: ["Jl. Rindang Hijau No. 123", "Jakarta Selatan, DKI Jakarta 12345"],
+      details: ["Jl. Rindang Hijau No. 123", "Puncak Pass, Kab. Bogor, Jawa Barat"],
       color: "text-green-800"
     },
     {
@@ -233,14 +233,22 @@ const ContactSection = () => {
 
         {/* Map Section */}
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-lg mb-16">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 h-96 rounded-2xl flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-16 h-16 text-green-800 mx-auto mb-4" />
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Lokasi Kami</h4>
-              <p className="text-gray-600">Google Maps Integration</p>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl overflow-hidden">
+            <h4 className="text-xl font-bold text-gray-900 mb-4 text-center mt-4">Lokasi Kami</h4>
+            <div className="w-full h-96 rounded-2xl overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d24146.775727256474!2d106.99804713601097!3d-6.702786219188843!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69b41da3000801%3A0xf076753f09646828!2sPuncak!5e1!3m2!1sen!2sid!4v1762496903405!5m2!1sen!2sid"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
             </div>
           </div>
         </div>
+
 
         {/* Bottom CTA */}
         <div className="bg-gradient-to-r from-green-800 to-green-900 rounded-3xl p-8 lg:p-12 text-center">

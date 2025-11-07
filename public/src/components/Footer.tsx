@@ -104,7 +104,7 @@ const Footer = () => {
                 <div>
                   <p className="text-sm text-gray-600">
                     Jl. Kopi Rindang No. 123<br />
-                    Jakarta, Indonesia
+                    Kab. Bogor, Jawa Barat.
                   </p>
                 </div>
               </div>
