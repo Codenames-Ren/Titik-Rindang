@@ -874,14 +874,13 @@ export default function AdminSection() {
                     <p className="text-sm text-gray-600 mb-2">Preview:</p>
                     <img
                       src={
-                        // Jika sedang mengedit, gunakan preview gambar yang sudah ada
                         editingItem?.preview ||
-                        // Jika menambah item baru, gunakan preview gambar baru
                         newItem.preview ||
-                        // Jika tidak ada preview, gunakan imageURL yang sudah ada (dari backend)
-                        editingItem?.imageURL || // pastikan ini ada di editingItem
+                        (editingItem?.imageURL &&
+                        typeof editingItem.imageURL === "string"
+                          ? `http://localhost:8080${editingItem.imageURL}`
+                          : editingItem?.imageURL) || // ✅ SUDAH DIPERBAIKI
                         newItem.imageURL ||
-                        // Fallback ke gambar placeholder jika tidak ada preview dan imageURL
                         "https://via.placeholder.com/150?text=No+Image"
                       }
                       alt="preview"

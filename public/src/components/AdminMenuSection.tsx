@@ -22,16 +22,91 @@ export default function AdminMenuSection() {
   const [isLoading, setIsLoading] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // ===== Fetch menu list =====
   useEffect(() => {
+    console.log("🔍 Fetching menus from:", `${API_URL}/menu/`);
     fetch(`${API_URL}/menu/`)
       .then((res) => res.json())
-      .then((data) => setMenus(data))
-      .catch((err) => console.error(err));
+      .then((data) => {
+        console.log("📦 Raw menu data from backend:", data);
+        setMenus(data);
+      })
+      .catch((err) => console.error("❌ Error fetching menus:", err));
   }, [API_URL]);
+
+  // ===== Improved Image URL Resolver with Debugging =====
+  const resolveImageURL = (url: string): string => {
+    console.group("🖼️ Resolving Image URL");
+    console.log("Original URL:", url);
+
+    if (!url) {
+      console.log("⚠️ Empty URL provided");
+      console.groupEnd();
+      return "";
+    }
+
+    // ✅ Already absolute URL with correct port
+    if (
+      url.startsWith("http://localhost:8080") ||
+      url.startsWith("http://127.0.0.1:8080")
+    ) {
+      console.log("✅ Already correct absolute URL");
+      console.groupEnd();
+      return url;
+    }
+
+    // ✅ If URL points to wrong port (3000), redirect to 8080
+    if (
+      url.startsWith("http://localhost:3000") ||
+      url.startsWith("http://127.0.0.1:3000")
+    ) {
+      const fixed = url.replace(
+        /http:\/\/(localhost|127\.0\.0\.1):3000/,
+        API_URL
+      );
+      console.log("🔄 Redirected from port 3000 to 8080:", fixed);
+      console.groupEnd();
+      return fixed;
+    }
+
+    // ✅ Handle absolute URLs with different domains
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      console.log("🌐 External absolute URL, using as-is");
+      console.groupEnd();
+      return url;
+    }
+
+    // ✅ Clean up relative paths
+    let cleanPath = url
+      .replace(/^\/+/, "") // Remove leading slashes
+      .replace(/^src\//, "") // Remove "src/" prefix if any
+      .trim();
+
+    console.log("🧹 Cleaned path:", cleanPath);
+
+    // ✅ Ensure path starts with "uploads/menu/"
+    if (!cleanPath.startsWith("uploads/")) {
+      // Handle case where path might be just "menu/filename.jpg"
+      if (cleanPath.startsWith("menu/")) {
+        cleanPath = `uploads/${cleanPath}`;
+      } else {
+        // Assume it's just filename
+        cleanPath = `uploads/menu/${cleanPath}`;
+      }
+      console.log("📁 Added uploads/menu/ prefix:", cleanPath);
+    }
+
+    // 🔥 Construct full URL
+    const fullURL = `${API_URL}/${cleanPath}`;
+    console.log("✨ Final resolved URL:", fullURL);
+    console.groupEnd();
+
+    return fullURL;
+  };
 
   // ===== Add or Update Menu =====
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,11 +121,15 @@ export default function AdminMenuSection() {
       Price: parseFloat(price),
     };
 
+    console.log("📤 Submitting menu payload:", payload);
+
     try {
       const url = editingMenu
         ? `${API_URL}/menu/${editingMenu.id}`
         : `${API_URL}/menu/`;
       const method = editingMenu ? "PUT" : "POST";
+
+      console.log(`🚀 ${method} request to:`, url);
 
       const res = await fetch(url, {
         method,
@@ -62,6 +141,8 @@ export default function AdminMenuSection() {
       });
 
       const data = await res.json();
+      console.log("📥 Response from backend:", data);
+
       if (!res.ok) throw new Error(data.error || "Gagal menyimpan menu.");
 
       alert(`✅ Menu berhasil ${editingMenu ? "diperbarui" : "ditambahkan"}!`);
@@ -72,12 +153,14 @@ export default function AdminMenuSection() {
       setEditingMenu(null);
 
       // Refresh data
+      console.log("🔄 Refreshing menu list...");
       const updatedMenus = await fetch(`${API_URL}/menu/`).then((r) =>
         r.json()
       );
+      console.log("📦 Updated menu list:", updatedMenus);
       setMenus(updatedMenus);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error saving menu:", err);
       alert("❌ Gagal menyimpan menu. Cek console log.");
     } finally {
       setIsLoading(false);
@@ -87,6 +170,7 @@ export default function AdminMenuSection() {
   // ===== Delete Menu =====
   const handleDelete = async (id: number) => {
     if (!confirm("Yakin ingin menghapus menu ini?")) return;
+    console.log("🗑️ Deleting menu with ID:", id);
     try {
       const res = await fetch(`${API_URL}/menu/${id}`, {
         method: "DELETE",
@@ -94,15 +178,17 @@ export default function AdminMenuSection() {
       });
       if (!res.ok) throw new Error("Gagal menghapus menu");
       setMenus(menus.filter((m) => m.id !== id));
+      console.log("✅ Menu deleted successfully");
       alert("✅ Menu berhasil dihapus!");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error deleting menu:", err);
       alert("❌ Gagal menghapus menu.");
     }
   };
 
   // ===== Handle Edit =====
   const handleEdit = (menu: Menu) => {
+    console.log("✏️ Editing menu:", menu);
     setEditingMenu(menu);
     setName(menu.name);
     setTagline(menu.tagline);
@@ -111,6 +197,7 @@ export default function AdminMenuSection() {
   };
 
   const handleCancel = () => {
+    console.log("❌ Cancelled editing");
     setEditingMenu(null);
     setName("");
     setTagline("");
@@ -118,21 +205,8 @@ export default function AdminMenuSection() {
     setPrice("");
   };
 
-  const resolveImageURL = (url: string): string => {
-    if (!url) return "";
-
-    if (url.startsWith("http")) return url;
-
-    // bersihkan path agar gak dobel prefix aneh
-    const clean = url
-      .replace(/^\/?src\/uploads\/menu\//, "")
-      .replace(/^\/?uploads\/menu\//, "")
-      .replace(/^\/?menu\//, "")
-      .trim();
-
-    // hasil akhir selalu bentuk: http://localhost:8080/uploads/menu/namafile.png
-    return `${API_URL}/uploads/menu/${clean}`;
-  };
+  console.log("🌐 API_URL:", API_URL);
+  console.log("🔑 Token exists:", !!token);
 
   return (
     <main className="min-h-screen bg-gray-50 p-8">
@@ -194,11 +268,24 @@ export default function AdminMenuSection() {
               className="border rounded-lg px-4 py-2"
             />
             {imageURL && (
-              <img
-                src={resolveImageURL(imageURL)}
-                alt="Preview"
-                className="mt-3 w-full max-w-sm h-40 object-cover rounded-lg border"
-              />
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-2">
+                  Preview URL: {resolveImageURL(imageURL)}
+                </p>
+                <img
+                  src={resolveImageURL(imageURL)}
+                  alt="Preview"
+                  className="w-full max-w-sm h-40 object-cover rounded-lg border"
+                  onError={(e) => {
+                    console.error(
+                      "❌ Failed to load preview image:",
+                      resolveImageURL(imageURL)
+                    );
+                    e.currentTarget.src =
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='160'%3E%3Crect fill='%23ddd' width='400' height='160'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23999' font-size='16'%3EImage not found%3C/text%3E%3C/svg%3E";
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -249,11 +336,29 @@ export default function AdminMenuSection() {
             className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100"
           >
             {menu.image_url && (
-              <img
-                src={resolveImageURL(menu.image_url)}
-                alt={menu.name}
-                className="w-full h-40 object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={resolveImageURL(menu.image_url)}
+                  alt={menu.name}
+                  className="w-full h-40 object-cover"
+                  onError={(e) => {
+                    console.error(
+                      `❌ Failed to load image for menu "${menu.name}":`,
+                      resolveImageURL(menu.image_url)
+                    );
+                    e.currentTarget.src =
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='160'%3E%3Crect fill='%23f3f4f6' width='400' height='160'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23999' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
+                  }}
+                  onLoad={() => {
+                    console.log(
+                      `✅ Successfully loaded image for menu "${menu.name}"`
+                    );
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                  {resolveImageURL(menu.image_url)}
+                </div>
+              </div>
             )}
 
             <div className="p-4">
