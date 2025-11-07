@@ -12,6 +12,7 @@ func ReservationRoutes(router *gin.Engine) {
 
 	reservation.GET("/", middlewares.AuthMiddleware(), controllers.GetAllReservations)
 	reservation.GET("/:id", middlewares.AuthMiddleware(), controllers.GetReservationByID)
+	reservation.GET("/fee", controllers.GetReservationFee)
 	reservation.POST("/", controllers.CreateReservation)
 	reservation.POST("/confirm/:id", controllers.ConfirmReservation)
 	reservation.PUT("/:id", middlewares.AuthMiddleware(), middlewares.CashierMiddleware(), controllers.UpdateReservation)

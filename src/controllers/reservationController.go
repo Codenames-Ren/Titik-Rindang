@@ -246,3 +246,16 @@ func DeleteReservation(c *gin.Context) {
 		"message": "reservation deleted successfully",
 	})
 }
+
+// GetReservationFee
+func GetReservationFee(c *gin.Context) {
+    fee := helper.GetReservationFee()
+
+    c.JSON(200, gin.H{
+        "status":  "success",
+        "message": "Reservation fee fetched successfully",
+        "data": gin.H{
+            "reservation_fee": fee,
+        },
+    })
+}
