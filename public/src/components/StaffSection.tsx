@@ -415,10 +415,16 @@ export default function StaffSection() {
                       className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100"
                     >
                       <img
-                        src={item.image_url || '/noimage.png'}
+                        src={
+                            item.image_url
+                            ? item.image_url.startsWith("http")
+                                ? item.image_url
+                                : `http://localhost:8080${item.image_url.replace(/^\/src/, "")}`
+                            : "/default-placeholder.png"
+                        }
                         alt={item.name}
                         className="w-full h-48 object-cover"
-                      />
+                        />
                       <div className="p-4">
                         <h4 className="font-bold text-gray-800">{item.name}</h4>
                         <p className="text-gray-500 text-sm">{item.tagline}</p>

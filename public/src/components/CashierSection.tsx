@@ -444,7 +444,17 @@ export default function CashierSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {menus.map((m) => (
                     <div key={m.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border">
-                      <img src={m.image_url} alt={m.name} className="w-full h-48 object-cover" />
+                      <img
+                        src={
+                          m.image_url
+                            ? m.image_url.startsWith("http")
+                              ? m.image_url
+                              : `http://localhost:8080${m.image_url.replace(/^\/src/, "")}`
+                            : "/default-placeholder.png"
+                        }
+                        alt={m.name}
+                        className="w-full h-48 object-cover"
+                      />
                       <div className="p-4">
                         <h4 className="font-bold">{m.name}</h4>
                         <p className="text-gray-500 text-sm">{m.tagline}</p>
