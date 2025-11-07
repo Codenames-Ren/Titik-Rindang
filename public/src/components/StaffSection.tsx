@@ -1,5 +1,5 @@
-'use client';
-import React, { useEffect, useState } from 'react';
+"use client";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Coffee,
@@ -13,7 +13,10 @@ import {
   Loader2,
   FileText,
   Plus,
-} from 'lucide-react';
+} from "lucide-react";
+
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 // ===== Type definition =====
 interface MenuItem {
@@ -31,7 +34,6 @@ interface TableItem {
   status: string;
 }
 
-
 interface Reservation {
   id: number;
   name: string;
@@ -44,7 +46,6 @@ interface Reservation {
   status: string;
 }
 
-
 interface Order {
   id: number;
   table_id: number;
@@ -55,10 +56,13 @@ interface Order {
 }
 
 export default function StaffSection() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'table' | 'menu' | 'reservation' | 'order'>('dashboard');
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "table" | "menu" | "reservation" | "order"
+  >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const router = useRouter();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // ===== State =====
   const [menus, setMenus] = useState<MenuItem[]>([]);
@@ -66,181 +70,213 @@ export default function StaffSection() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newTableId, setNewTableId] = useState('');
+  const [newTableId, setNewTableId] = useState("");
 
   // ===== Fetch data on load =====
   useEffect(() => {
     fetchAllData();
   }, []);
 
-    const fetchAllData = async () => {
-  setLoading(true);
-  try {
-    const headersWithAuth: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const headersWithAuth: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
 
-    const [menuRes, tableRes, reservRes, orderRes] = await Promise.all([
-      fetch("http://localhost:8080/menu/"),
-      fetch("http://localhost:8080/table/"),
-      fetch("http://localhost:8080/reservation/", { headers: headersWithAuth }),
-      fetch("http://localhost:8080/order/", { headers: headersWithAuth }),
-    ]);
+      const [menuRes, tableRes, reservRes, orderRes] = await Promise.all([
+        fetch("http://localhost:8080/menu/"),
+        fetch("http://localhost:8080/table/"),
+        fetch("http://localhost:8080/reservation/", {
+          headers: headersWithAuth,
+        }),
+        fetch("http://localhost:8080/order/", { headers: headersWithAuth }),
+      ]);
 
-    const [menuJson, tableJson, reservJson, orderJson] = await Promise.all([
-      menuRes.json(),
-      tableRes.json(),
-      reservRes.json(),
-      orderRes.json(),
-    ]);
+      const [menuJson, tableJson, reservJson, orderJson] = await Promise.all([
+        menuRes.json(),
+        tableRes.json(),
+        reservRes.json(),
+        orderRes.json(),
+      ]);
 
-    const menuData = Array.isArray(menuJson) ? menuJson : menuJson.data || [];
-    const tableData = Array.isArray(tableJson) ? tableJson : tableJson.data || [];
-    const reservData = Array.isArray(reservJson) ? reservJson : reservJson.data || [];
-    const orderData = Array.isArray(orderJson) ? orderJson : orderJson.data || [];
+      const menuData = Array.isArray(menuJson) ? menuJson : menuJson.data || [];
+      const tableData = Array.isArray(tableJson)
+        ? tableJson
+        : tableJson.data || [];
+      const reservData = Array.isArray(reservJson)
+        ? reservJson
+        : reservJson.data || [];
+      const orderData = Array.isArray(orderJson)
+        ? orderJson
+        : orderJson.data || [];
 
-    // ========================
-    // ✅ MENU (read-only)
-    // ========================
-    setMenus(
-      menuData.map((m: any) => ({
-        id: m.ID || m.id,
-        name: m.Name || m.name || "",
-        tagline: m.Tagline || m.tagline || "",
-        image_url: m.ImageURL || m.image_url || "",
-        price: Number(m.Price || m.price || 0),
-      }))
-    );
+      // ========================
+      // ✅ MENU (read-only)
+      // ========================
+      setMenus(
+        menuData.map((m: any) => ({
+          id: m.ID || m.id,
+          name: m.Name || m.name || "",
+          tagline: m.Tagline || m.tagline || "",
+          image_url: m.ImageURL || m.image_url || "",
+          price: Number(m.Price || m.price || 0),
+        }))
+      );
 
-    // ========================
-    // ✅ TABLE (CRUD)
-    // ========================
-    setTables(
-      tableData.map((t: any) => ({
-        id: t.ID || t.id,
-        table_no: t.TableNo || t.table_no,
-        status: t.Status || t.status || "available",
-      }))
-    );
+      // ========================
+      // ✅ TABLE (CRUD)
+      // ========================
+      setTables(
+        tableData.map((t: any) => ({
+          id: t.ID || t.id,
+          table_no: t.TableNo || t.table_no,
+          status: t.Status || t.status || "available",
+        }))
+      );
 
-    // ========================
-    // ✅ RESERVATION (read-only)
-    // ========================
-    setReservations(
-      reservData.map((r: any) => ({
-        id: r.ID || r.id,
-        name: r.Name || r.name || "",
-        phone: r.Phone || r.phone || "",
-        email: r.Email || r.email || "",
-        table_id: r.TableID || r.table_id,
-        reservation_date: r.ReservationDate || r.reservation_date,
-        table_fee: Number(r.TableFee || r.table_fee || 0),
-        status: r.Status || r.status || "",
-      }))
-    );
+      // ========================
+      // ✅ RESERVATION (read-only)
+      // ========================
+      setReservations(
+        reservData.map((r: any) => ({
+          id: r.ID || r.id,
+          name: r.Name || r.name || "",
+          phone: r.Phone || r.phone || "",
+          email: r.Email || r.email || "",
+          table_id: r.TableID || r.table_id,
+          reservation_date: r.ReservationDate || r.reservation_date,
+          table_fee: Number(r.TableFee || r.table_fee || 0),
+          status: r.Status || r.status || "",
+        }))
+      );
 
-    // ========================
-    // ✅ ORDER (read-only)
-    // ========================
-    setOrders(
-      orderData.map((o: any) => ({
-        id: o.ID || o.id,
-        table_id: o.TableID || o.table_id,
-        customer: o.Customer || o.customer || "",
-        total_amount: Number(o.Total || o.total || 0),
-        payment_method: o.PaymentMethod || o.payment_method || "",
-        status: o.Status || o.status || "",
-      }))
-    );
-  } catch (err) {
-    console.error("❌ Gagal fetch data:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      // ========================
+      // ✅ ORDER (read-only)
+      // ========================
+      setOrders(
+        orderData.map((o: any) => ({
+          id: o.ID || o.id,
+          table_id: o.TableID || o.table_id,
+          customer: o.Customer || o.customer || "",
+          total_amount: Number(o.Total || o.total || 0),
+          payment_method: o.PaymentMethod || o.payment_method || "",
+          status: o.Status || o.status || "",
+        }))
+      );
+    } catch (err) {
+      console.error("❌ Gagal fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===== Add Table =====
   const addTable = async () => {
-    if (!newTableId.trim()) return alert('Masukkan nomor meja (contoh: 1)');
-    if (!token) return alert('❌ Anda belum login sebagai staff.');
+    if (!newTableId.trim()) {
+      return Swal.fire(
+        "Input Kosong",
+        "Masukkan nomor meja (contoh: 1)",
+        "warning"
+      );
+    }
+
+    if (!token) {
+      return Swal.fire("Gagal", "Anda belum login sebagai staff ❌", "error");
+    }
 
     const tableNumber = parseInt(newTableId, 10);
-    if (isNaN(tableNumber)) return alert('❌ Nomor meja harus angka.');
+    if (isNaN(tableNumber)) {
+      return Swal.fire("Gagal", "Nomor meja harus angka ❌", "error");
+    }
 
     try {
-      const res = await fetch('http://localhost:8080/table/', {
-        method: 'POST',
+      const res = await fetch("http://localhost:8080/table/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ table_no: tableNumber, status: 'available' }),
+        body: JSON.stringify({ table_no: tableNumber, status: "available" }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Gagal menambah meja.');
+      if (!res.ok) throw new Error(data.message || "Gagal menambah meja.");
 
       setTables([...tables, data.data]);
-      setNewTableId('');
-      alert('✅ Meja berhasil ditambahkan!');
+      setNewTableId("");
+      await Swal.fire("Berhasil", "Meja berhasil ditambahkan ✅", "success");
     } catch (err) {
-      console.error('❌ Gagal tambah meja:', err);
-      alert('❌ Gagal menambah meja.');
+      Swal.fire("Gagal", "Gagal menambah meja ❌", "error");
     }
   };
 
   // ===== Edit Table Status =====
-    const handleStatusChange = async (id: string | number | undefined, newStatus: string) => {
-    if (!id) return alert("❌ ID meja tidak valid.");
-    if (!token) return alert("❌ Anda belum login sebagai staff.");
+  const handleStatusChange = async (
+    id: string | number | undefined,
+    newStatus: string
+  ) => {
+    if (!id) {
+      return Swal.fire("Gagal", "ID meja tidak valid ❌", "error");
+    }
+
+    if (!token) {
+      return Swal.fire("Gagal", "Anda belum login sebagai staff ❌", "error");
+    }
 
     try {
-        const res = await fetch(`http://localhost:8080/table/${id}`, {
+      const res = await fetch(`http://localhost:8080/table/${id}`, {
         method: "PUT",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
-        });
+      });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Gagal mengupdate status meja.");
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || "Gagal mengupdate status meja.");
 
-        // Update state lokal
-        setTables((prev) =>
+      // Update state lokal
+      setTables((prev) =>
         prev.map((t) =>
-            t.id === id || t.ID === id ? { ...t, status: newStatus } : t
+          t.id === id || t.ID === id ? { ...t, status: newStatus } : t
         )
-        );
+      );
 
-        alert("✅ Status meja berhasil diupdate!");
+      await Swal.fire(
+        "Berhasil",
+        "Status meja berhasil diupdate ✅",
+        "success"
+      );
     } catch (err) {
-        console.error("❌ Gagal update status meja:", err);
-        alert("❌ Gagal mengupdate status meja.");
+      Swal.fire("Gagal", "Gagal mengupdate status meja ❌", "error");
     }
-    };
+  };
 
   // ===== Logout =====
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    alert('✅ Logout berhasil!');
-    router.push('/');
+  const handleLogout = async () => {
+    localStorage.removeItem("token");
+    await Swal.fire("Logout", "Anda telah keluar ✅", "success");
+
+    router.push("/");
   };
 
   // ===== Helper for status color =====
   const getStatusColor = (status: string) =>
-    status === 'available'
-      ? 'bg-emerald-500'
-      : status === 'booked'
-      ? 'bg-amber-500'
-      : 'bg-rose-500';
+    status === "available"
+      ? "bg-emerald-500"
+      : status === "booked"
+      ? "bg-amber-500"
+      : "bg-rose-500";
 
   // ===== Sidebar Menu =====
   const menuNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'table', label: 'Table Management', icon: Table2 },
-    { id: 'menu', label: 'Menu', icon: Coffee },
-    { id: 'reservation', label: 'Reservation', icon: ClipboardList },
-    { id: 'order', label: 'Order', icon: FileText },
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+    { id: "table", label: "Table Management", icon: Table2 },
+    { id: "menu", label: "Menu", icon: Coffee },
+    { id: "reservation", label: "Reservation", icon: ClipboardList },
+    { id: "order", label: "Order", icon: FileText },
   ];
 
   return (
@@ -248,7 +284,7 @@ export default function StaffSection() {
       {/* ===== SIDEBAR ===== */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
+          sidebarOpen ? "w-64" : "w-20"
         } bg-gradient-to-b from-blue-800 to-blue-900 text-white transition-all duration-300 flex flex-col shadow-2xl`}
       >
         {/* Header */}
@@ -280,12 +316,14 @@ export default function StaffSection() {
                 onClick={() => setActiveTab(item.id as any)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   activeTab === item.id
-                    ? 'bg-white text-blue-800 shadow-lg'
-                    : 'text-blue-100 hover:bg-blue-700'
+                    ? "bg-white text-blue-800 shadow-lg"
+                    : "text-blue-100 hover:bg-blue-700"
                 }`}
               >
                 <Icon size={22} />
-                {sidebarOpen && <span className="font-medium">{item.label}</span>}
+                {sidebarOpen && (
+                  <span className="font-medium">{item.label}</span>
+                )}
               </button>
             );
           })}
@@ -311,7 +349,7 @@ export default function StaffSection() {
       <main className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm border-b px-8 py-6">
           <h2 className="text-3xl font-bold text-gray-800">
-            {menuNav.find((m) => m.id === activeTab)?.label || 'Dashboard'}
+            {menuNav.find((m) => m.id === activeTab)?.label || "Dashboard"}
           </h2>
           <p className="text-gray-500 mt-1">Kelola data operasional harian</p>
         </header>
@@ -325,7 +363,7 @@ export default function StaffSection() {
           ) : (
             <>
               {/* ===== DASHBOARD ===== */}
-              {activeTab === 'dashboard' && (
+              {activeTab === "dashboard" && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-blue-600 text-white rounded-2xl p-6 shadow-lg">
                     <p>Total Menu</p>
@@ -334,80 +372,92 @@ export default function StaffSection() {
                   <div className="bg-emerald-600 text-white rounded-2xl p-6 shadow-lg">
                     <p>Available Tables</p>
                     <h3 className="text-4xl font-bold">
-                      {tables.filter((t) => t.status === 'available').length}
+                      {tables.filter((t) => t.status === "available").length}
                     </h3>
                   </div>
                   <div className="bg-amber-500 text-white rounded-2xl p-6 shadow-lg">
                     <p>Booked Tables</p>
                     <h3 className="text-4xl font-bold">
-                      {tables.filter((t) => t.status === 'booked').length}
+                      {tables.filter((t) => t.status === "booked").length}
                     </h3>
                   </div>
                 </div>
               )}
 
               {/* ===== TABLE MANAGEMENT ===== */}
-                {activeTab === 'table' && (
+              {activeTab === "table" && (
                 <div className="space-y-6">
-                    {/* Add New Table */}
-                    <div className="bg-white p-6 rounded-2xl shadow-lg">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">Tambah Meja Baru</h3>
+                  {/* Add New Table */}
+                  <div className="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">
+                      Tambah Meja Baru
+                    </h3>
                     <div className="flex gap-4">
-                        <input
+                      <input
                         type="text"
                         placeholder="Contoh: 1"
                         value={newTableId}
                         onChange={(e) => setNewTableId(e.target.value)}
-                        className="border border-gray-300 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                        <button
+                        className="border text-gray-700 border-gray-300 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <button
                         onClick={addTable}
                         className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all"
-                        >
+                      >
                         <Plus size={18} className="inline mr-1" /> Tambah
-                        </button>
+                      </button>
                     </div>
-                    </div>
+                  </div>
 
-                    {/* List of Tables */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {/* List of Tables */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {tables.map((table) => (
-                        <div
-                        key={table.id || table.ID || table.table_no || Math.random()}
+                      <div
+                        key={
+                          table.id ||
+                          table.ID ||
+                          table.table_no ||
+                          Math.random()
+                        }
                         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all"
-                        >
+                      >
                         <h4 className="text-xl font-bold text-gray-800 mb-3">
-                            Meja {table.table_no || table.id}
+                          Meja {table.table_no || table.id}
                         </h4>
 
                         {/* Dropdown for status edit */}
                         <div className="flex items-center justify-between">
-                            <span
+                          <span
                             className={`px-3 py-2 rounded-xl text-white font-semibold ${getStatusColor(
-                                table.status
+                              table.status
                             )}`}
-                            >
+                          >
                             {table.status}
-                            </span>
+                          </span>
 
-                            <select
+                          <select
                             value={table.status}
-                            onChange={(e) => handleStatusChange(table.id || table.ID, e.target.value)}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                table.id || table.ID,
+                                e.target.value
+                              )
+                            }
                             className="border border-gray-300 rounded-xl p-2 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                            >
+                          >
                             <option value="available">Available</option>
                             <option value="booked">Booked</option>
                             <option value="unavailable">Unavailable</option>
-                            </select>
+                          </select>
                         </div>
-                        </div>
+                      </div>
                     ))}
-                    </div>
+                  </div>
                 </div>
-                )}
+              )}
 
               {/* ===== MENU ===== */}
-              {activeTab === 'menu' && (
+              {activeTab === "menu" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {menus.map((item) => (
                     <div
@@ -416,20 +466,23 @@ export default function StaffSection() {
                     >
                       <img
                         src={
-                            item.image_url
+                          item.image_url
                             ? item.image_url.startsWith("http")
-                                ? item.image_url
-                                : `http://localhost:8080${item.image_url.replace(/^\/src/, "")}`
+                              ? item.image_url
+                              : `http://localhost:8080${item.image_url.replace(
+                                  /^\/src/,
+                                  ""
+                                )}`
                             : "/default-placeholder.png"
                         }
                         alt={item.name}
                         className="w-full h-48 object-cover"
-                        />
+                      />
                       <div className="p-4">
                         <h4 className="font-bold text-gray-800">{item.name}</h4>
                         <p className="text-gray-500 text-sm">{item.tagline}</p>
                         <p className="text-blue-700 font-semibold mt-2">
-                          Rp {(item.price ?? 0).toLocaleString('id-ID')}
+                          Rp {(item.price ?? 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>
@@ -438,68 +491,77 @@ export default function StaffSection() {
               )}
 
               {/* ===== RESERVATION ===== */}
-              {activeTab === 'reservation' && (
+              {activeTab === "reservation" && (
                 <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Reservasi</h3>
+                  <h3 className="text-xl font-bold mb-4 text-gray-700">
+                    Daftar Reservasi
+                  </h3>
                   {reservations.length === 0 ? (
                     <p className="text-gray-500">Belum ada reservasi.</p>
                   ) : (
                     <table className="w-full border">
-                        <thead>
-                            <tr className="bg-gray-100 text-left">
-                            <th className="p-3 border">Nama</th>
-                            <th className="p-3 border">Telepon</th>
-                            <th className="p-3 border">Email</th>
-                            <th className="p-3 border">Meja</th>
-                            <th className="p-3 border">Tanggal Reservasi</th>
-                            <th className="p-3 border">Biaya Meja</th>
-                            <th className="p-3 border">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {reservations.map((r, i) => (
-                            <tr key={r.id || i} className="border-t hover:bg-gray-50">
-                                <td className="p-3 border">{r.name}</td>
-                                <td className="p-3 border">{r.phone}</td>
-                                <td className="p-3 border">{r.email || '-'}</td>
-                                <td className="p-3 border">
-                                {r.table?.table_no || r.table_id || '-'}
-                                </td>
-                                <td className="p-3 border">
-                                {new Date(r.reservation_date).toLocaleString('id-ID')}
-                                </td>
-                                <td className="p-3 border text-right">
-                                Rp {(r.table_fee ?? 0).toLocaleString('id-ID')}
-                                </td>
-                                <td
-                                className={`p-3 border font-semibold ${
-                                    r.status === 'Paid'
-                                    ? 'text-emerald-600'
-                                    : r.status === 'Unpaid'
-                                    ? 'text-amber-600'
-                                    : 'text-rose-600'
-                                }`}
-                                >
-                                {r.status}
-                                </td>
-                            </tr>
-                            ))}
-                        </tbody>
+                      <thead>
+                        <tr className="bg-blue-800 text-left">
+                          <th className="p-3 border">Nama</th>
+                          <th className="p-3 border">Telepon</th>
+                          <th className="p-3 border">Email</th>
+                          <th className="p-3 border">Meja</th>
+                          <th className="p-3 border">Tanggal Reservasi</th>
+                          <th className="p-3 border">Biaya Meja</th>
+                          <th className="p-3 border">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reservations.map((r, i) => (
+                          <tr
+                            key={r.id || i}
+                            className="border-t text-gray-700 hover:bg-blue-50"
+                          >
+                            <td className="p-3 border">{r.name}</td>
+                            <td className="p-3 border">{r.phone}</td>
+                            <td className="p-3 border">{r.email || "-"}</td>
+                            <td className="p-3 border">
+                              {r.table?.table_no || r.table_id || "-"}
+                            </td>
+                            <td className="p-3 border">
+                              {new Date(r.reservation_date).toLocaleString(
+                                "id-ID"
+                              )}
+                            </td>
+                            <td className="p-3 border text-right">
+                              Rp {(r.table_fee ?? 0).toLocaleString("id-ID")}
+                            </td>
+                            <td
+                              className={`p-3 border font-semibold ${
+                                r.status === "Paid"
+                                  ? "text-emerald-600"
+                                  : r.status === "Unpaid"
+                                  ? "text-amber-600"
+                                  : "text-rose-600"
+                              }`}
+                            >
+                              {r.status}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   )}
                 </div>
               )}
 
               {/* ===== ORDER ===== */}
-              {activeTab === 'order' && (
+              {activeTab === "order" && (
                 <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Order</h3>
+                  <h3 className="text-xl font-bold mb-4 text-gray-700">
+                    Daftar Order
+                  </h3>
                   {orders.length === 0 ? (
-                    <p className="text-gray-500">Belum ada order.</p>
+                    <p className="text-gray-600">Belum ada order.</p>
                   ) : (
                     <table className="w-full border">
                       <thead>
-                        <tr className="bg-gray-100 text-left">
+                        <tr className="bg-blue-800 text-left">
                           <th className="p-3 border">ID</th>
                           <th className="p-3 border">Meja</th>
                           <th className="p-3 border">Customer</th>
@@ -509,14 +571,16 @@ export default function StaffSection() {
                       </thead>
                       <tbody>
                         {orders.map((o) => (
-                          <tr key={o.id} className="border-t">
+                          <tr key={o.id} className="border-t text-gray-700">
                             <td className="p-3 border">{o.id}</td>
                             <td className="p-3 border">{o.table_id}</td>
                             <td className="p-3 border">{o.customer}</td>
                             <td className="p-3 border">
-                              Rp {(o.total_amount ?? 0).toLocaleString('id-ID')}
+                              Rp {(o.total_amount ?? 0).toLocaleString("id-ID")}
                             </td>
-                            <td className="p-3 border capitalize">{o.status}</td>
+                            <td className="p-3 border capitalize">
+                              {o.status}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
