@@ -15,7 +15,10 @@ import {
   LogOut,
   Settings,
   BarChart3,
+  ClipboardList,
+  FileText
 } from "lucide-react";
+
 function UserRegisterForm({
   token,
   fetchUsers,
@@ -184,19 +187,32 @@ interface User {
   role: string;
 }
 
+interface Reservation {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  table_id: number;
+  reservation_date: string;
+  table_fee?: number;
+  status: string;
+}
+
+
 interface TableItem {
   id: string;
   status: TableStatus;
 }
 
 export default function AdminSection() {
-  const [activeTab, setActiveTab] = useState<
-    "dashboard" | "menu" | "user" | "table"
-  >("dashboard");
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'user' | 'table' | 'reservation'>('dashboard');
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // ===== MENU MANAGEMENT =====
   const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+
 
   interface NewMenuItem {
     name: string;
@@ -222,31 +238,60 @@ export default function AdminSection() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8080/menu/")
-      .then((res) => res.json())
-      .then((data) => {
-        // Debug dulu
-        console.log("📦 Data dari backend:", data);
+  const fetchAllData = async () => {
+    try {
+      // ======== MENU ========
+      const resMenu = await fetch("http://localhost:8080/menu/");
+      const menuData = await resMenu.json();
+      const rawMenus = Array.isArray(menuData)
+        ? menuData
+        : Array.isArray(menuData.data)
+        ? menuData.data
+        : [];
+      const formattedMenus = rawMenus.map((item: any) => ({
+        id: item.ID,
+        name: item.Name,
+        tagline: item.Tagline,
+        imageURL: item.ImageURL || "",
+        price: item.Price || 0,
+      }));
+      setMenus(formattedMenus);
 
-        const rawMenus = Array.isArray(data)
-          ? data
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+      // ======== RESERVATION ========
+      const token = localStorage.getItem("token"); // ⬅️ Ambil token
+      const resReserv = await fetch("http://localhost:8080/reservation/", {
+        headers: {
+          Authorization: `Bearer ${token}`, // ⬅️ Kirim header auth
+        },
+      });
 
-        // 🧩 Normalisasi field agar sesuai dengan frontend
-        const formatted = rawMenus.map((item: any) => ({
-          id: item.ID,
-          name: item.Name,
-          tagline: item.Tagline,
-          imageURL: item.ImageURL || "",
-          price: item.Price || 0,
-        }));
+      if (!resReserv.ok) {
+        throw new Error(`Gagal fetch reservasi: ${resReserv.status}`);
+      }
 
-        setMenus(formatted);
-      })
-      .catch((err) => console.error("❌ Gagal fetch menu:", err));
-  }, []);
+      const reservData = await resReserv.json();
+
+      setReservations(
+        reservData.data?.map((r: any) => ({
+          id: r.ID || r.id,
+          name: r.Name || r.name,
+          phone: r.Phone || r.phone,
+          email: r.Email || r.email,
+          table_id: r.TableID || r.table_id,
+          reservation_date: r.ReservationDate || r.reservation_date,
+          table_fee: Number(r.TableFee || r.table_fee || 0),
+          status: r.Status || r.status,
+        })) || []
+      );
+    } catch (err) {
+      console.error("❌ Gagal fetch data:", err);
+    }
+  };
+
+  fetchAllData();
+}, [token]);
+
+
 
   const router = useRouter();
 
@@ -475,6 +520,76 @@ export default function AdminSection() {
     }
   };
 
+  // ===== RESERVATION MANAGEMENT (Admin) =====
+// 🔹 Fetch semua reservasi
+const fetchReservations = async () => {
+  try {
+    const res = await fetch("http://localhost:8080/reservation/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+
+    const raw = Array.isArray(data)
+      ? data
+      : Array.isArray(data.data)
+      ? data.data
+      : [];
+
+    setReservations(
+      raw.map((r: any) => ({
+        id: r.ID || r.id,
+        name: r.Name || r.name,
+        phone: r.Phone || r.phone,
+        email: r.Email || r.email,
+        table_id: r.TableID || r.table_id,
+        reservation_date: r.ReservationDate || r.reservation_date,
+        table_fee: Number(r.TableFee || r.table_fee || 0),
+        status: r.Status || r.status,
+      }))
+    );
+  } catch (err) {
+    console.error("❌ Gagal fetch reservasi:", err);
+  }
+};
+
+// 🔹 Konfirmasi pembayaran
+const confirmReservation = async (id: number) => {
+  if (!confirm("Konfirmasi pembayaran reservasi ini?")) return;
+  try {
+    const res = await fetch(`http://localhost:8080/reservation/confirm/${id}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Gagal konfirmasi reservasi");
+
+    alert("✅ Pembayaran reservasi dikonfirmasi!");
+    fetchReservations();
+  } catch (err) {
+    console.error("❌ Gagal konfirmasi reservasi:", err);
+    alert("❌ Gagal konfirmasi reservasi.");
+  }
+};
+
+// 🔹 Batalkan reservasi (otomatis hapus)
+const cancelReservation = async (id: number) => {
+  if (!confirm("Apakah kamu yakin ingin membatalkan reservasi ini?")) return;
+  try {
+    const res = await fetch(`http://localhost:8080/reservation/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Gagal membatalkan reservasi");
+
+    alert("✅ Reservasi berhasil dibatalkan!");
+    fetchReservations();
+  } catch (err) {
+    console.error("❌ Gagal cancel reservasi:", err);
+    alert("❌ Gagal membatalkan reservasi.");
+  }
+};
+
+
   // ===== EDIT USER =====
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
@@ -635,6 +750,8 @@ export default function AdminSection() {
     { id: "menu", label: "Menu Management", icon: Coffee },
     { id: "user", label: "User Management", icon: Users },
     { id: "table", label: "Table Status", icon: Table2 },
+    { id: 'reservation', label: 'Reservation', icon: ClipboardList }, // 🆕 Tambahan baru
+  { id: 'order', label: 'Order', icon: FileText },
   ];
 
   return (
@@ -979,6 +1096,156 @@ export default function AdminSection() {
               </div>
             </div>
           )}
+
+          {/* ===== RESERVATION (Admin) ===== */}
+          {activeTab === "reservation" && (
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Reservasi</h3>
+
+              {reservations.length === 0 ? (
+                <p className="text-gray-500">Belum ada reservasi.</p>
+              ) : (
+                <table className="w-full border rounded-lg overflow-hidden">
+                  <thead>
+                    <tr className="bg-gray-100 text-left">
+                      <th className="p-3 border">ID</th>
+                      <th className="p-3 border">Nama</th>
+                      <th className="p-3 border">Meja</th>
+                      <th className="p-3 border">Tanggal</th>
+                      <th className="p-3 border">Status</th>
+                      <th className="p-3 border text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reservations.map((r) => (
+                      <tr key={r.id} className="border-t hover:bg-gray-50">
+                        <td className="p-3 border">{r.id}</td>
+                        <td className="p-3 border">{r.name}</td>
+                        <td className="p-3 border">{r.table_id}</td>
+                        <td className="p-3 border">
+                          {new Date(r.reservation_date).toLocaleString("id-ID")}
+                        </td>
+                        <td
+                          className={`p-3 border capitalize ${
+                            r.status === "unpaid"
+                              ? "text-amber-600"
+                              : r.status === "paid"
+                              ? "text-emerald-600"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {r.status}
+                        </td>
+                        <td className="p-3 border text-center space-x-2">
+                          {/* 🔍 Detail reservasi */}
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(
+                                  `http://localhost:8080/reservation/${r.id}`,
+                                  {
+                                    headers: { Authorization: `Bearer ${token}` },
+                                  }
+                                );
+                                if (!res.ok)
+                                  throw new Error("Gagal mengambil detail reservasi");
+                                const raw = await res.json();
+                                const d = raw.data || raw;
+
+                                alert(`
+                                  🔍 Detail Reservasi:
+                                  Nama: ${d.Name ?? d.name ?? "-"}
+                                  Meja: ${d.Table?.TableNo ?? d.TableID ?? d.table_id ?? "-"}
+                                  Tanggal: ${new Date(
+                                                          d.ReservationDate || d.reservation_date
+                                                        ).toLocaleString("id-ID")}
+                                  Status: ${d.Status ?? d.status ?? "-"}
+                                  `);
+                              } catch (err) {
+                                console.error("❌ Gagal ambil detail reservasi:", err);
+                                alert("❌ Gagal mengambil detail reservasi.");
+                              }
+                            }}
+                            className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                          >
+                            Detail
+                          </button>
+
+                          {/* ✅ Konfirmasi reservasi */}
+                          {r.status.toLowerCase() === "unpaid" && (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  if (
+                                    !confirm(
+                                      `Konfirmasi pembayaran reservasi #${r.id}?`
+                                    )
+                                  )
+                                    return;
+                                  try {
+                                    const res = await fetch(
+                                      `http://localhost:8080/reservation/confirm/${r.id}`,
+                                      {
+                                        method: "POST",
+                                        headers: { Authorization: `Bearer ${token}` },
+                                      }
+                                    );
+                                    if (!res.ok)
+                                      throw new Error("Gagal konfirmasi reservasi");
+                                    alert("✅ Pembayaran dikonfirmasi!");
+                                    fetchReservations(); // refresh data
+                                  } catch (err) {
+                                    console.error("❌ Gagal konfirmasi:", err);
+                                    alert("❌ Gagal konfirmasi reservasi.");
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                              >
+                                Konfirmasi
+                              </button>
+
+                              {/* ❌ Cancel reservasi */}
+                              <button
+                                onClick={async () => {
+                                  if (
+                                    !confirm(
+                                      `Apakah kamu yakin ingin membatalkan reservasi #${r.id}?`
+                                    )
+                                  )
+                                    return;
+                                  try {
+                                    const res = await fetch(
+                                      `http://localhost:8080/reservation/${r.id}`,
+                                      {
+                                        method: "DELETE",
+                                        headers: { Authorization: `Bearer ${token}` },
+                                      }
+                                    );
+                                    if (!res.ok)
+                                      throw new Error("Gagal membatalkan reservasi");
+                                    alert("✅ Reservasi berhasil dibatalkan!");
+                                    fetchReservations(); // refresh data otomatis
+                                  } catch (err) {
+                                    console.error("❌ Gagal cancel reservasi:", err);
+                                    alert("❌ Gagal membatalkan reservasi.");
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+
 
           {/* ===== USER MANAGEMENT ===== */}
           {activeTab === "user" && (
