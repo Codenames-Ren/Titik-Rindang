@@ -187,6 +187,38 @@ export default function StaffSection() {
     }
   };
 
+  // ===== Edit Table Status =====
+    const handleStatusChange = async (id: string | number | undefined, newStatus: string) => {
+    if (!id) return alert("❌ ID meja tidak valid.");
+    if (!token) return alert("❌ Anda belum login sebagai staff.");
+
+    try {
+        const res = await fetch(`http://localhost:8080/table/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Gagal mengupdate status meja.");
+
+        // Update state lokal
+        setTables((prev) =>
+        prev.map((t) =>
+            t.id === id || t.ID === id ? { ...t, status: newStatus } : t
+        )
+        );
+
+        alert("✅ Status meja berhasil diupdate!");
+    } catch (err) {
+        console.error("❌ Gagal update status meja:", err);
+        alert("❌ Gagal mengupdate status meja.");
+    }
+    };
+
   // ===== Logout =====
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -315,44 +347,64 @@ export default function StaffSection() {
               )}
 
               {/* ===== TABLE MANAGEMENT ===== */}
-              {activeTab === 'table' && (
+                {activeTab === 'table' && (
                 <div className="space-y-6">
-                  <div className="bg-white p-6 rounded-2xl shadow-lg">
+                    {/* Add New Table */}
+                    <div className="bg-white p-6 rounded-2xl shadow-lg">
                     <h3 className="text-xl font-bold text-gray-800 mb-4">Tambah Meja Baru</h3>
                     <div className="flex gap-4">
-                      <input
+                        <input
                         type="text"
                         placeholder="Contoh: 1"
                         value={newTableId}
                         onChange={(e) => setNewTableId(e.target.value)}
                         className="border border-gray-300 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                      <button
+                        />
+                        <button
                         onClick={addTable}
                         className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all"
-                      >
+                        >
                         <Plus size={18} className="inline mr-1" /> Tambah
-                      </button>
+                        </button>
                     </div>
-                  </div>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {/* List of Tables */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {tables.map((table) => (
-                    <div
+                        <div
                         key={table.id || table.ID || table.table_no || Math.random()}
                         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all"
-                    >
-                        <h4 className="text-xl font-bold text-gray-800 mb-3">Meja {table.id || table.ID || table.table_no}</h4>
-                        <div
-                        className={`${getStatusColor(table.status)} text-white text-center py-2 rounded-xl font-semibold`}
                         >
-                        {table.status}
+                        <h4 className="text-xl font-bold text-gray-800 mb-3">
+                            Meja {table.table_no || table.id}
+                        </h4>
+
+                        {/* Dropdown for status edit */}
+                        <div className="flex items-center justify-between">
+                            <span
+                            className={`px-3 py-2 rounded-xl text-white font-semibold ${getStatusColor(
+                                table.status
+                            )}`}
+                            >
+                            {table.status}
+                            </span>
+
+                            <select
+                            value={table.status}
+                            onChange={(e) => handleStatusChange(table.id || table.ID, e.target.value)}
+                            className="border border-gray-300 rounded-xl p-2 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                            >
+                            <option value="available">Available</option>
+                            <option value="booked">Booked</option>
+                            <option value="unavailable">Unavailable</option>
+                            </select>
                         </div>
-                    </div>
+                        </div>
                     ))}
-                  </div>
+                    </div>
                 </div>
-              )}
+                )}
 
               {/* ===== MENU ===== */}
               {activeTab === 'menu' && (
