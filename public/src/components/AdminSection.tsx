@@ -16,8 +16,11 @@ import {
   Settings,
   BarChart3,
   ClipboardList,
-  FileText
+  FileText,
 } from "lucide-react";
+
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 function UserRegisterForm({
   token,
@@ -90,20 +93,21 @@ function UserRegisterForm({
         setPassword("");
         setRole("staff");
 
-        // ✅ Alert konfirmasi sukses
-        alert(
-          editingUser
-            ? "✅ User berhasil diperbarui!"
-            : "✅ User baru berhasil ditambahkan!"
-        );
+        Swal.fire({
+          title: editingUser ? "Berhasil!" : "Berhasil!",
+          text: editingUser
+            ? "User berhasil diperbarui!"
+            : "User baru berhasil ditambahkan!",
+          icon: "success",
+        });
       } else {
         const errText = await res.text();
         console.error("❌ Gagal simpan user:", errText);
-        alert("❌ Gagal menyimpan user. Coba lagi.");
+        Swal.fire("Gagal", "Gagal menyimpan user. Coba lagi.", "error");
       }
     } catch (err) {
       console.error("❌ Error:", err);
-      alert("❌ Terjadi kesalahan server.");
+      Swal.fire("Gagal", "Terjadi kesalahan server.", "error");
     }
   };
 
@@ -115,26 +119,26 @@ function UserRegisterForm({
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 flex-1 min-w-[150px] focus:ring-2 focus:ring-emerald-500 outline-none"
+        className="border text-gray-800 border-gray-600 rounded-lg p-2 flex-1 min-w-[150px] focus:ring-2 focus:ring-emerald-500 outline-none"
         required
       />
 
       {/* 🔹 Email */}
       <input
         type="email"
-        placeholder="Email (opsional)"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 flex-1 min-w-[200px] focus:ring-2 focus:ring-emerald-500 outline-none"
+        className="border text-gray-600 border-gray-600 rounded-lg p-2 flex-1 min-w-[200px] focus:ring-2 focus:ring-emerald-500 outline-none"
       />
 
       {/* 🔹 Password */}
       <input
         type="password"
-        placeholder={editingUser ? "Password baru (opsional)" : "Password"}
+        placeholder={editingUser ? "Password baru" : "Password"}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 flex-1 min-w-[200px] focus:ring-2 focus:ring-emerald-500 outline-none"
+        className="border text-gray-800 border-gray-600 rounded-lg p-2 flex-1 min-w-[200px] focus:ring-2 focus:ring-emerald-500 outline-none"
         required={!editingUser}
       />
 
@@ -142,7 +146,7 @@ function UserRegisterForm({
       <select
         value={role}
         onChange={(e) => setRole(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 flex-1 min-w-[150px] focus:ring-2 focus:ring-emerald-500 outline-none"
+        className="border text-gray-800 border-gray-600 rounded-lg p-2 flex-1 min-w-[150px] focus:ring-2 focus:ring-emerald-500 outline-none"
       >
         <option value="staff">Staff</option>
         <option value="cashier">Cashier</option>
@@ -154,7 +158,7 @@ function UserRegisterForm({
           <button
             type="button"
             onClick={() => setEditingUser(null)}
-            className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition-all"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg  transition-all"
           >
             Batal
           </button>
@@ -198,15 +202,15 @@ interface Reservation {
   status: string;
 }
 
-
 interface TableItem {
   id: string;
   status: TableStatus;
 }
 
 export default function AdminSection() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'user' | 'table' | 'reservation' | 'order'>('dashboard');
-
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "menu" | "user" | "table" | "reservation" | "order"
+  >("dashboard");
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -214,7 +218,6 @@ export default function AdminSection() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-
 
   interface NewMenuItem {
     name: string;
@@ -313,14 +316,12 @@ export default function AdminSection() {
     fetchAllData();
   }, []);
 
-
-
-
   const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // hapus token
-    alert("✅ Logout berhasil!");
+    Swal.fire("Berhasil!", "Logout berhasil!", "success");
+
     router.push("/"); // redirect ke homepage
   };
 
@@ -348,13 +349,18 @@ export default function AdminSection() {
 
   const addMenuItem = async () => {
     if (!newItem.name || !newItem.price || !newItem.imageURL) {
-      alert("Lengkapi semua field termasuk gambar!");
+      Swal.fire(
+        "Perhatian",
+        "Lengkapi semua field termasuk gambar!",
+        "warning"
+      );
+
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("❌ Kamu belum login sebagai admin.");
+      Swal.fire("Gagal", "Kamu belum login sebagai admin.", "error");
       return;
     }
 
@@ -378,8 +384,7 @@ export default function AdminSection() {
       if (!res.ok) {
         throw new Error(data.message || "Gagal menambahkan menu.");
       }
-
-      alert("✅ Menu berhasil ditambahkan!");
+      Swal.fire("Berhasil", "Menu berhasil ditambahkan!", "success");
 
       // Update state dengan gambar dari backend
       const newMenu = {
@@ -400,8 +405,7 @@ export default function AdminSection() {
         preview: "", // Reset preview setelah menu ditambahkan
       });
     } catch (err) {
-      console.error("❌ Gagal menambahkan menu:", err);
-      alert("❌ Gagal menambahkan menu.");
+      Swal.fire("Gagal", "Gagal menambahkan menu.", "error");
     }
   };
 
@@ -437,17 +441,25 @@ export default function AdminSection() {
             : m
         )
       );
+      Swal.fire("Berhasil", "Menu berhasil diupdate!", "success");
 
-      alert("✅ Menu berhasil diupdate!");
       setEditingItem(null);
     } catch (err) {
-      console.error("❌ Gagal update menu:", err);
-      alert("Gagal update menu.");
+      Swal.fire("Gagal", "Gagal update menu.", "error");
     }
   };
 
   const deleteMenuItem = async (id: number) => {
-    if (!confirm("Yakin ingin menghapus menu ini?")) return;
+    const confirmDelete = await Swal.fire({
+      title: "Hapus Menu?",
+      text: "Menu yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!confirmDelete.isConfirmed) return;
 
     try {
       const res = await fetch(`http://localhost:8080/menu/${id}`, {
@@ -455,11 +467,11 @@ export default function AdminSection() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Gagal hapus menu");
-      alert("✅ Menu berhasil dihapus!");
+      Swal.fire("Berhasil", "Menu berhasil dihapus!", "success");
+
       setMenus(menus.filter((m) => m.id !== id));
     } catch (err) {
-      console.error(err);
-      alert("❌ Gagal hapus menu.");
+      Swal.fire("Gagal", "Gagal hapus menu.", "error");
     }
   };
 
@@ -514,11 +526,24 @@ export default function AdminSection() {
   }, [token]);
 
   const deleteUser = async (id: string | number) => {
-    if (!confirm("🗑️ Yakin ingin menghapus user ini?")) return;
+    const sure = await Swal.fire({
+      title: "Hapus User?",
+      text: "User akan hilang permanen.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+    if (!sure.isConfirmed) return;
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("❌ Token tidak ditemukan. Silakan login ulang sebagai admin.");
+      Swal.fire(
+        "Gagal",
+        "Token tidak ditemukan. Silakan login ulang sebagai admin.",
+        "error"
+      );
+
       return;
     }
 
@@ -536,157 +561,184 @@ export default function AdminSection() {
       // Hapus di frontend state
       setUsers((prev) => prev.filter((u) => u.id.toString() !== id.toString()));
 
-      alert("✅ User berhasil dihapus!");
+      Swal.fire("Berhasil!", "User berhasil dihapus!", "success");
     } catch (err) {
-      console.error("❌ Error delete user:", err);
-      alert("❌ Gagal menghapus user. Coba lagi.");
+      Swal.fire("Gagal", "Gagal menghapus user. Coba lagi.", "error");
     }
   };
 
   // ===== RESERVATION MANAGEMENT (Admin) =====
-// 🔹 Fetch semua reservasi
-const fetchReservations = async () => {
-  try {
-    const res = await fetch("http://localhost:8080/reservation/", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
+  // 🔹 Fetch semua reservasi
+  const fetchReservations = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/reservation/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
 
-    const raw = Array.isArray(data)
-      ? data
-      : Array.isArray(data.data)
-      ? data.data
-      : [];
+      const raw = Array.isArray(data)
+        ? data
+        : Array.isArray(data.data)
+        ? data.data
+        : [];
 
-    setReservations(
-      raw.map((r: any) => ({
-        id: r.ID || r.id,
-        name: r.Name || r.name,
-        phone: r.Phone || r.phone,
-        email: r.Email || r.email,
-        table_id: r.TableID || r.table_id,
-        reservation_date: r.ReservationDate || r.reservation_date,
-        table_fee: Number(r.TableFee || r.table_fee || 0),
-        status: r.Status || r.status,
-      }))
-    );
-  } catch (err) {
-    console.error("❌ Gagal fetch reservasi:", err);
-  }
-};
-
-// 🔹 Konfirmasi pembayaran
-const confirmReservation = async (id: number) => {
-  if (!confirm("Konfirmasi pembayaran reservasi ini?")) return;
-  try {
-    const res = await fetch(`http://localhost:8080/reservation/confirm/${id}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("Gagal konfirmasi reservasi");
-
-    alert("✅ Pembayaran reservasi dikonfirmasi!");
-    fetchReservations();
-  } catch (err) {
-    console.error("❌ Gagal konfirmasi reservasi:", err);
-    alert("❌ Gagal konfirmasi reservasi.");
-  }
-};
-
-// 🔹 Batalkan reservasi (otomatis hapus)
-const cancelReservation = async (id: number) => {
-  if (!confirm("Apakah kamu yakin ingin membatalkan reservasi ini?")) return;
-  try {
-    const res = await fetch(`http://localhost:8080/reservation/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) throw new Error("Gagal membatalkan reservasi");
-
-    alert("✅ Reservasi berhasil dibatalkan!");
-    fetchReservations();
-  } catch (err) {
-    console.error("❌ Gagal cancel reservasi:", err);
-    alert("❌ Gagal membatalkan reservasi.");
-  }
-};
-
-// ===== ORDER MANAGEMENT =====
-const viewOrderDetail = async (id: number) => {
-  try {
-    const res = await fetch(`http://localhost:8080/order/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) throw new Error("Gagal mengambil detail order");
-
-    const raw = await res.json();
-    const d = raw.data || raw;
-
-    alert(`
-    🧾 Detail Order:
-      Customer: ${d.Customer ?? "-"}
-      Meja: ${d.Table?.TableNo ?? d.TableID ?? "-"}
-      Total: Rp ${(d.Total ?? 0).toLocaleString("id-ID")}
-      Status: ${d.Status ?? "-"}
-    `);
-  } catch (err) {
-    console.error("❌ Gagal ambil detail order:", err);
-    alert("❌ Gagal mengambil detail order.");
-  }
-};
-
-const printReceipt = async (id: number) => {
-  try {
-    const res = await fetch(`http://localhost:8080/order/${id}/receipt`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const raw = await res.json();
-    if (!res.ok || raw.status !== "success") {
-      alert("❌ Gagal mencetak struk");
-      return;
+      setReservations(
+        raw.map((r: any) => ({
+          id: r.ID || r.id,
+          name: r.Name || r.name,
+          phone: r.Phone || r.phone,
+          email: r.Email || r.email,
+          table_id: r.TableID || r.table_id,
+          reservation_date: r.ReservationDate || r.reservation_date,
+          table_fee: Number(r.TableFee || r.table_fee || 0),
+          status: r.Status || r.status,
+        }))
+      );
+    } catch (err) {
+      console.error("❌ Gagal fetch reservasi:", err);
     }
+  };
 
-    const receiptPath = raw.receipt;
-    const cleanPath = receiptPath.replace(/^src\//, "");
-    const pdfUrl = cleanPath.startsWith("http")
-      ? cleanPath
-      : `http://localhost:8080/${cleanPath}`;
-
-    const a = document.createElement("a");
-    a.href = pdfUrl;
-    a.download = `receipt_${id}.pdf`;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } catch (err) {
-    console.error("❌ Error printReceipt:", err);
-    alert("❌ Gagal mencetak struk.");
-  }
-};
-
-const deleteOrder = async (id: number) => {
-  if (!confirm(`🗑️ Yakin ingin menghapus order #${id}?`)) return;
-  try {
-    const res = await fetch(`http://localhost:8080/order/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+  // 🔹 Konfirmasi pembayaran
+  const confirmReservation = async (id: number) => {
+    const sure = await Swal.fire({
+      title: "Konfirmasi Pembayaran?",
+      text: "Pastikan pembayaran sudah diterima.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Konfirmasi",
+      cancelButtonText: "Batal",
     });
-    if (!res.ok) throw new Error("Gagal hapus order");
-    alert("✅ Order berhasil dihapus!");
-    setOrders((prev) => prev.filter((o) => o.id !== id));
-  } catch (err) {
-    console.error("❌ Gagal hapus order:", err);
-    alert("❌ Gagal menghapus order.");
-  }
-};
+    if (!sure.isConfirmed) return;
 
+    try {
+      const res = await fetch(
+        `http://localhost:8080/reservation/confirm/${id}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal konfirmasi reservasi");
 
+      Swal.fire("Berhasil!", "Pembayaran reservasi dikonfirmasi!", "success");
+
+      fetchReservations();
+    } catch (err) {
+      Swal.fire("Gagal", "Gagal konfirmasi reservasi.", "error");
+    }
+  };
+
+  // 🔹 Batalkan reservasi (otomatis hapus)
+  const cancelReservation = async (id: number) => {
+    const sure = await Swal.fire({
+      title: "Batalkan Reservasi?",
+      icon: "warning",
+      text: "Reservasi akan dihapus permanen.",
+      showCancelButton: true,
+      confirmButtonText: "Batalkan",
+      cancelButtonText: "Tidak",
+    });
+    if (!sure.isConfirmed) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/reservation/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Gagal membatalkan reservasi");
+
+      Swal.fire("Berhasil!", "Reservasi berhasil dibatalkan!", "success");
+
+      fetchReservations();
+    } catch (err) {
+      Swal.fire("Gagal", "Gagal membatalkan reservasi.", "error");
+    }
+  };
+
+  // ===== ORDER MANAGEMENT =====
+  const viewOrderDetail = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/order/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Gagal mengambil detail order");
+
+      const raw = await res.json();
+      const d = raw.data || raw;
+
+      Swal.fire({
+        title: "Detail Order",
+        html: `
+    <b>Customer:</b> ${d.Customer ?? "-"} <br/>
+    <b>Meja:</b> ${d.Table?.TableNo ?? d.TableID ?? "-"} <br/>
+    <b>Total:</b> Rp ${(d.Total ?? 0).toLocaleString("id-ID")} <br/>
+    <b>Status:</b> ${d.Status ?? "-"}
+  `,
+        icon: "info",
+      });
+    } catch (err) {
+      Swal.fire("Gagal", "Gagal mengambil detail order.", "error");
+    }
+  };
+
+  const printReceipt = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/order/${id}/receipt`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const raw = await res.json();
+      if (!res.ok || raw.status !== "success") {
+        Swal.fire("Gagal", "Gagal mencetak struk.", "error");
+        return;
+      }
+
+      const receiptPath = raw.receipt;
+      const cleanPath = receiptPath.replace(/^src\//, "");
+      const pdfUrl = cleanPath.startsWith("http")
+        ? cleanPath
+        : `http://localhost:8080/${cleanPath}`;
+
+      const a = document.createElement("a");
+      a.href = pdfUrl;
+      a.download = `receipt_${id}.pdf`;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      Swal.fire("Gagal", "Gagal mencetak struk.", "error");
+    }
+  };
+
+  const deleteOrder = async (id: number) => {
+    const sure = await Swal.fire({
+      title: `Hapus Order #${id}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+    if (!sure.isConfirmed) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/order/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Gagal hapus order");
+      Swal.fire("Berhasil", "Order berhasil dihapus!", "success");
+
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+    } catch (err) {
+      Swal.fire("Gagal", "Gagal menghapus order.", "error");
+    }
+  };
 
   // ===== EDIT USER =====
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -705,7 +757,12 @@ const deleteOrder = async (id: number) => {
   };
 
   const updateUser = async (id: string) => {
-    if (!token) return alert("❌ Anda belum login sebagai admin.");
+    if (!token)
+      return Swal.fire(
+        "Gagal",
+        "Hanya admin yang dapat mengupdate user.",
+        "error"
+      );
     try {
       const res = await fetch(`http://localhost:8080/admin/users/${id}`, {
         method: "PUT",
@@ -719,7 +776,8 @@ const deleteOrder = async (id: number) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal update user.");
 
-      alert("✅ User berhasil diperbarui!");
+      Swal.fire("Berhasil!", "User berhasil diperbarui!", "success");
+
       setEditingUser(null);
       setUsers((prev) =>
         prev.map((u) =>
@@ -729,8 +787,7 @@ const deleteOrder = async (id: number) => {
         )
       );
     } catch (err) {
-      console.error("❌ Error update user:", err);
-      alert("Gagal memperbarui user.");
+      Swal.fire("Gagal", "Gagal memperbarui user.", "error");
     }
   };
 
@@ -767,12 +824,24 @@ const deleteOrder = async (id: number) => {
 
   // 🔹 POST (Admin)
   const addTable = async () => {
-    if (!newTableId.trim()) return alert("Masukkan nomor meja (contoh: 1)");
-    if (!token) return alert("❌ Anda belum login sebagai admin.");
+    if (!newTableId.trim())
+      return Swal.fire(
+        "Perhatian",
+        "Masukkan nomor meja (contoh: 1)",
+        "warning"
+      );
+
+    if (!token)
+      return Swal.fire("Gagal", "Anda belum login sebagai admin.", "error");
 
     const tableNumber = parseInt(newTableId, 10);
     if (isNaN(tableNumber)) {
-      alert("❌ Nomor meja harus berupa angka, contoh: 1");
+      Swal.fire(
+        "Perhatian",
+        "Nomor meja harus berupa angka, contoh: 1",
+        "warning"
+      );
+
       return;
     }
 
@@ -800,17 +869,26 @@ const deleteOrder = async (id: number) => {
         },
       ]);
       setNewTableId("");
-      alert("✅ Meja berhasil ditambahkan!");
+      Swal.fire("Berhasil", "Meja berhasil ditambahkan!", "success");
     } catch (err) {
-      console.error("❌ Error add table:", err);
-      alert("Gagal menambah meja.");
+      Swal.fire("Gagal", "Gagal menambah meja.", "error");
     }
   };
 
   // 🔹 DELETE (Admin)
   const deleteTable = async (id: string) => {
-    if (!confirm(`🗑️ Yakin ingin menghapus meja ${id}?`)) return;
-    if (!token) return alert("❌ Anda belum login sebagai admin.");
+    const sure = await Swal.fire({
+      title: `Hapus Meja ${id}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+    if (!sure.isConfirmed) return;
+
+    if (!token) {
+      return Swal.fire("Gagal", "Anda belum login sebagai admin.", "error");
+    }
 
     try {
       const res = await fetch(`http://localhost:8080/table/${id}`, {
@@ -822,10 +900,9 @@ const deleteOrder = async (id: number) => {
       if (!res.ok) throw new Error(data.error || "Gagal menghapus meja");
 
       setTables((prev) => prev.filter((t) => t.id !== id));
-      alert("✅ Meja berhasil dihapus!");
+      Swal.fire("Berhasil", "Meja berhasil dihapus!", "success");
     } catch (err) {
-      console.error("❌ Gagal hapus meja:", err);
-      alert("Gagal menghapus meja.");
+      Swal.fire("Gagal", "Gagal menghapus meja.", "error");
     }
   };
 
@@ -848,8 +925,8 @@ const deleteOrder = async (id: number) => {
     { id: "menu", label: "Menu Management", icon: Coffee },
     { id: "user", label: "User Management", icon: Users },
     { id: "table", label: "Table Status", icon: Table2 },
-    { id: 'reservation', label: 'Reservation', icon: ClipboardList }, // 🆕 Tambahan baru
-    { id: 'order', label: 'Order', icon: FileText },
+    { id: "reservation", label: "Reservation", icon: ClipboardList }, // 🆕 Tambahan baru
+    { id: "order", label: "Order", icon: FileText },
   ];
 
   return (
@@ -1036,7 +1113,7 @@ const deleteOrder = async (id: number) => {
                           })
                         : setNewItem({ ...newItem, name: e.target.value })
                     }
-                    className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                    className="border text-gray-800 border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
                   <input
                     type="text"
@@ -1050,7 +1127,7 @@ const deleteOrder = async (id: number) => {
                           })
                         : setNewItem({ ...newItem, price: e.target.value })
                     }
-                    className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                    className="border text-gray-800 border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
                   <select
                     value={editingItem ? editingItem.tagline : newItem.tagline}
@@ -1062,14 +1139,14 @@ const deleteOrder = async (id: number) => {
                           })
                         : setNewItem({ ...newItem, tagline: e.target.value })
                     }
-                    className="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                    className="border text-gray-800 border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   >
                     <option value="">Pilih Kategori</option>
                     <option value="Kopi">Kopi</option>
                     <option value="Non-Kopi">Non-Kopi</option>
                     <option value="Makanan">Makanan</option>
                   </select>
-                  <label className="border-2 border-dashed border-gray-300 rounded-xl p-3 flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
+                  <label className="border-2 text-gray-800 border-dashed border-gray-600 rounded-xl p-3 flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
                     <Image className="mr-2" size={18} /> Upload Gambar
                     <input
                       type="file"
@@ -1198,14 +1275,16 @@ const deleteOrder = async (id: number) => {
           {/* ===== RESERVATION (Admin) ===== */}
           {activeTab === "reservation" && (
             <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Reservasi</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">
+                Daftar Reservasi
+              </h3>
 
               {reservations.length === 0 ? (
-                <p className="text-gray-500">Belum ada reservasi.</p>
+                <p className="text-gray-600">Belum ada reservasi.</p>
               ) : (
                 <table className="w-full border rounded-lg overflow-hidden">
                   <thead>
-                    <tr className="bg-gray-100 text-left">
+                    <tr className="bg-green-600 border-gray-700 text-left">
                       <th className="p-3 border">ID</th>
                       <th className="p-3 border">Nama</th>
                       <th className="p-3 border">Meja</th>
@@ -1216,7 +1295,10 @@ const deleteOrder = async (id: number) => {
                   </thead>
                   <tbody>
                     {reservations.map((r) => (
-                      <tr key={r.id} className="border-t hover:bg-gray-50">
+                      <tr
+                        key={r.id}
+                        className="border-t text-gray-800 hover:bg-green-50"
+                      >
                         <td className="p-3 border">{r.id}</td>
                         <td className="p-3 border">{r.name}</td>
                         <td className="p-3 border">{r.table_id}</td>
@@ -1229,7 +1311,7 @@ const deleteOrder = async (id: number) => {
                               ? "text-amber-600"
                               : r.status === "paid"
                               ? "text-emerald-600"
-                              : "text-gray-600"
+                              : "text-green-600"
                           }`}
                         >
                           {r.status}
@@ -1242,26 +1324,45 @@ const deleteOrder = async (id: number) => {
                                 const res = await fetch(
                                   `http://localhost:8080/reservation/${r.id}`,
                                   {
-                                    headers: { Authorization: `Bearer ${token}` },
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                    },
                                   }
                                 );
                                 if (!res.ok)
-                                  throw new Error("Gagal mengambil detail reservasi");
+                                  throw new Error(
+                                    "Gagal mengambil detail reservasi"
+                                  );
                                 const raw = await res.json();
                                 const d = raw.data || raw;
 
-                                alert(`
-                                  🔍 Detail Reservasi:
-                                  Nama: ${d.Name ?? d.name ?? "-"}
-                                  Meja: ${d.Table?.TableNo ?? d.TableID ?? d.table_id ?? "-"}
-                                  Tanggal: ${new Date(
-                                                          d.ReservationDate || d.reservation_date
-                                                        ).toLocaleString("id-ID")}
-                                  Status: ${d.Status ?? d.status ?? "-"}
-                                  `);
+                                Swal.fire({
+                                  title: "Detail Reservasi",
+                                  html: `
+                                    <b>Nama:</b> ${
+                                      d.Name ?? d.name ?? "-"
+                                    } <br/>
+                                    <b>Meja:</b> ${
+                                      d.Table?.TableNo ??
+                                      d.TableID ??
+                                      d.table_id ??
+                                      "-"
+                                    } <br/>
+                                    <b>Tanggal:</b> ${new Date(
+                                      d.ReservationDate || d.reservation_date
+                                    ).toLocaleString("id-ID")} <br/>
+                                    <b>Status:</b> ${
+                                      d.Status ?? d.status ?? "-"
+                                    }
+  `,
+                                  icon: "info",
+                                });
                               } catch (err) {
-                                console.error("❌ Gagal ambil detail reservasi:", err);
-                                alert("❌ Gagal mengambil detail reservasi.");
+                                Swal.fire(
+                                  "Gagal",
+                                  "Gagal mengambil detail reservasi.",
+                                  "error"
+                                );
                               }
                             }}
                             className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
@@ -1274,27 +1375,44 @@ const deleteOrder = async (id: number) => {
                             <>
                               <button
                                 onClick={async () => {
-                                  if (
-                                    !confirm(
-                                      `Konfirmasi pembayaran reservasi #${r.id}?`
-                                    )
-                                  )
-                                    return;
+                                  const sure = await Swal.fire({
+                                    title: `Konfirmasi Pembayaran #${r.id}?`,
+                                    text: "Pastikan pembayaran sudah diterima.",
+                                    icon: "question",
+                                    showCancelButton: true,
+                                    confirmButtonText: "Konfirmasi",
+                                    cancelButtonText: "Batal",
+                                  });
+                                  if (!sure.isConfirmed) return;
+
+                                  return;
                                   try {
                                     const res = await fetch(
                                       `http://localhost:8080/reservation/confirm/${r.id}`,
                                       {
                                         method: "POST",
-                                        headers: { Authorization: `Bearer ${token}` },
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
                                       }
                                     );
                                     if (!res.ok)
-                                      throw new Error("Gagal konfirmasi reservasi");
-                                    alert("✅ Pembayaran dikonfirmasi!");
+                                      throw new Error(
+                                        "Gagal konfirmasi reservasi"
+                                      );
+                                    Swal.fire(
+                                      "Berhasil",
+                                      "Pembayaran reservasi dikonfirmasi!",
+                                      "success"
+                                    );
+
                                     fetchReservations(); // refresh data
                                   } catch (err) {
-                                    console.error("❌ Gagal konfirmasi:", err);
-                                    alert("❌ Gagal konfirmasi reservasi.");
+                                    Swal.fire(
+                                      "Gagal",
+                                      "Gagal konfirmasi reservasi.",
+                                      "error"
+                                    );
                                   }
                                 }}
                                 className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
@@ -1305,27 +1423,44 @@ const deleteOrder = async (id: number) => {
                               {/* ❌ Cancel reservasi */}
                               <button
                                 onClick={async () => {
-                                  if (
-                                    !confirm(
-                                      `Apakah kamu yakin ingin membatalkan reservasi #${r.id}?`
-                                    )
-                                  )
-                                    return;
+                                  const sure = await Swal.fire({
+                                    title: `Batalkan Reservasi #${r.id}?`,
+                                    text: "Reservasi akan dihapus permanen.",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonText: "Batalkan",
+                                    cancelButtonText: "Tidak",
+                                  });
+                                  if (!sure.isConfirmed) return;
+
+                                  return;
                                   try {
                                     const res = await fetch(
                                       `http://localhost:8080/reservation/${r.id}`,
                                       {
                                         method: "DELETE",
-                                        headers: { Authorization: `Bearer ${token}` },
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
                                       }
                                     );
                                     if (!res.ok)
-                                      throw new Error("Gagal membatalkan reservasi");
-                                    alert("✅ Reservasi berhasil dibatalkan!");
+                                      throw new Error(
+                                        "Gagal membatalkan reservasi"
+                                      );
+                                    Swal.fire(
+                                      "Berhasil",
+                                      "Reservasi berhasil dibatalkan!",
+                                      "success"
+                                    );
+
                                     fetchReservations(); // refresh data otomatis
                                   } catch (err) {
-                                    console.error("❌ Gagal cancel reservasi:", err);
-                                    alert("❌ Gagal membatalkan reservasi.");
+                                    Swal.fire(
+                                      "Gagal",
+                                      "Gagal membatalkan reservasi.",
+                                      "error"
+                                    );
                                   }
                                 }}
                                 className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
@@ -1346,13 +1481,15 @@ const deleteOrder = async (id: number) => {
           {/* ===== ORDER (Admin) ===== */}
           {activeTab === "order" && (
             <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Order</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">
+                Daftar Order
+              </h3>
               {orders.length === 0 ? (
-                <p className="text-gray-500">Belum ada order.</p>
+                <p className="text-gray-600">Belum ada order.</p>
               ) : (
                 <table className="w-full border rounded-lg overflow-hidden">
                   <thead>
-                    <tr className="bg-gray-100 text-left">
+                    <tr className="bg-green-600 text-left">
                       <th className="p-3 border">ID</th>
                       <th className="p-3 border">Meja</th>
                       <th className="p-3 border">Customer</th>
@@ -1363,11 +1500,16 @@ const deleteOrder = async (id: number) => {
                   </thead>
                   <tbody>
                     {orders.map((o) => (
-                      <tr key={o.id} className="border-t hover:bg-gray-50">
+                      <tr
+                        key={o.id}
+                        className="border-t text-gray-800 hover:bg-green-50"
+                      >
                         <td className="p-3 border">{o.id}</td>
                         <td className="p-3 border">{o.table_id}</td>
                         <td className="p-3 border">{o.customer}</td>
-                        <td className="p-3 border">Rp {(o.total_amount ?? 0).toLocaleString("id-ID")}</td>
+                        <td className="p-3 border">
+                          Rp {(o.total_amount ?? 0).toLocaleString("id-ID")}
+                        </td>
                         <td className="p-3 border capitalize">{o.status}</td>
                         <td className="p-3 border text-center space-x-2">
                           <button
@@ -1396,7 +1538,6 @@ const deleteOrder = async (id: number) => {
               )}
             </div>
           )}
-
 
           {/* ===== USER MANAGEMENT ===== */}
           {activeTab === "user" && (
@@ -1534,7 +1675,7 @@ const deleteOrder = async (id: number) => {
                     placeholder="Contoh: 1"
                     value={newTableId}
                     onChange={(e) => setNewTableId(e.target.value)}
-                    className="border border-gray-300 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="border text-gray-800 border-gray-600 rounded-xl p-3 flex-1 focus:ring-2 focus:ring-emerald-500 outline-none"
                   />
                   <button
                     onClick={addTable}
