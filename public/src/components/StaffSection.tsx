@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
 import {
   Coffee,
   Table2,
@@ -12,6 +13,7 @@ import {
   Settings,
   ClipboardList,
 } from 'lucide-react';
+
 
 export default function StaffSection() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'table' | 'menu' | 'reservation' | 'order'>('dashboard');
@@ -59,6 +61,8 @@ export default function StaffSection() {
       })
       .catch((err) => console.error('❌ Gagal fetch meja:', err));
   }, []);
+
+  
 
   // ===== POST TABLE (Staff/Admin only) =====
   const addTable = async () => {
@@ -122,6 +126,15 @@ export default function StaffSection() {
     { id: 'order', label: 'Order', icon: Menu },
   ];
 
+  const router = useRouter();
+
+    const handleLogout = () => {
+        localStorage.removeItem("token"); // hapus token
+        alert("✅ Logout berhasil!");
+        router.push("/"); // redirect ke homepage
+    };
+
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -173,7 +186,9 @@ export default function StaffSection() {
             <Settings size={22} />
             {sidebarOpen && <span>Settings</span>}
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-red-600 transition-all">
+          <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-blue-100 hover:bg-red-600 transition-all">
             <LogOut size={22} />
             {sidebarOpen && <span>Logout</span>}
           </button>
