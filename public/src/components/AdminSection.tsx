@@ -201,8 +201,10 @@ interface Reservation {
 
 interface TableItem {
   id: string;
-  status: TableStatus;
+  table_no?: number | string;
+  status: "available" | "booked" | "in_used";
 }
+
 
 export default function AdminSection() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'user' | 'table' | 'reservation' | 'order'>('dashboard');
@@ -738,9 +740,11 @@ const deleteOrder = async (id: number) => {
   type TableStatus = "available" | "booked" | "in_used";
 
   interface TableItem {
-    id: string;
-    status: TableStatus;
-  }
+  id: string;
+  table_no?: number | string;
+  status: "available" | "booked" | "in_used";
+}
+
 
   const [tables, setTables] = useState<TableItem[]>([]);
   const [newTableId, setNewTableId] = useState("");
@@ -758,6 +762,7 @@ const deleteOrder = async (id: number) => {
         setTables(
           raw.map((t: any) => ({
             id: t.ID || t.id,
+            table_no: t.TableNo || t.table_no || "-", // 🆕 ambil dari backend
             status: t.Status || t.status || "available",
           }))
         );
@@ -1554,7 +1559,7 @@ const deleteOrder = async (id: number) => {
                   >
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-2xl font-bold text-gray-800">
-                        Meja {table.id}
+                        Meja {table.table_no ?? table.id}
                       </span>
                       <div
                         className={`w-4 h-4 rounded-full ${getStatusColor(
