@@ -13,6 +13,6 @@ func TableRoutes(router *gin.Engine) {
 	table.GET("/", controllers.GetAllTables)
 	table.GET("/:id", controllers.GetTableByID)
 	table.POST("/", middlewares.AuthMiddleware(), controllers.CreateTable)
-	table.PUT("/:id", middlewares.AuthMiddleware(), middlewares.CashierMiddleware(), controllers.UpdateTable)
+	table.PUT("/:id", middlewares.AuthMiddleware(), controllers.UpdateTable)
 	table.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteTable)
 }
