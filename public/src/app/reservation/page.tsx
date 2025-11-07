@@ -2,7 +2,7 @@ import React from "react";
 import ReservationSection from "@/components/ReservationSection";
 
 export const metadata = {
-  title: "Tentang Kami - Titik Rindang",
+  title: "Reservasi - Titik Rindang",
   description: "Pelajari lebih lanjut tentang Titik Rindang dan kualitas kopi kami.",
 };
 

@@ -2,7 +2,7 @@ import React from "react";
 import Login from "@/components/Login";
 
 export const metadata = {
-  title: "Tentang Kami - Titik Rindang",
+  title: "Login Pengelola - Titik Rindang",
   description: "Pelajari lebih lanjut tentang Titik Rindang dan kualitas kopi kami.",
 };
 

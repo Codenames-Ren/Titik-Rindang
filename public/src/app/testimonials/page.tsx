@@ -2,7 +2,7 @@ import React from "react";
 import Testimonials from "@/components/Testimonials";
 
 export const metadata = {
-  title: "Tentang Kami - Titik Rindang",
+  title: "Testimoni - Titik Rindang",
   description: "Pelajari lebih lanjut tentang Titik Rindang dan kualitas kopi kami.",
 };
 
