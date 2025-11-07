@@ -205,13 +205,15 @@ interface TableItem {
 }
 
 export default function AdminSection() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'user' | 'table' | 'reservation'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'user' | 'table' | 'reservation' | 'order'>('dashboard');
+
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // ===== MENU MANAGEMENT =====
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
 
   interface NewMenuItem {
@@ -238,58 +240,79 @@ export default function AdminSection() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
-  const fetchAllData = async () => {
-    try {
-      // ======== MENU ========
-      const resMenu = await fetch("http://localhost:8080/menu/");
-      const menuData = await resMenu.json();
-      const rawMenus = Array.isArray(menuData)
-        ? menuData
-        : Array.isArray(menuData.data)
-        ? menuData.data
-        : [];
-      const formattedMenus = rawMenus.map((item: any) => ({
-        id: item.ID,
-        name: item.Name,
-        tagline: item.Tagline,
-        imageURL: item.ImageURL || "",
-        price: item.Price || 0,
-      }));
-      setMenus(formattedMenus);
+    const token = localStorage.getItem("token"); // Ambil token sekali di luar
 
-      // ======== RESERVATION ========
-      const token = localStorage.getItem("token"); // ⬅️ Ambil token
-      const resReserv = await fetch("http://localhost:8080/reservation/", {
-        headers: {
-          Authorization: `Bearer ${token}`, // ⬅️ Kirim header auth
-        },
-      });
+    const fetchAllData = async () => {
+      try {
+        // ======== MENU ========
+        const resMenu = await fetch("http://localhost:8080/menu/");
+        const menuData = await resMenu.json();
+        const rawMenus = Array.isArray(menuData)
+          ? menuData
+          : Array.isArray(menuData.data)
+          ? menuData.data
+          : [];
+        const formattedMenus = rawMenus.map((item: any) => ({
+          id: item.ID,
+          name: item.Name,
+          tagline: item.Tagline,
+          imageURL: item.ImageURL || "",
+          price: item.Price || 0,
+        }));
+        setMenus(formattedMenus);
 
-      if (!resReserv.ok) {
-        throw new Error(`Gagal fetch reservasi: ${resReserv.status}`);
+        // ======== RESERVATION ========
+        const resReserv = await fetch("http://localhost:8080/reservation/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!resReserv.ok) {
+          throw new Error(`Gagal fetch reservasi: ${resReserv.status}`);
+        }
+
+        const reservData = await resReserv.json();
+
+        setReservations(
+          reservData.data?.map((r: any) => ({
+            id: r.ID || r.id,
+            name: r.Name || r.name,
+            phone: r.Phone || r.phone,
+            email: r.Email || r.email,
+            table_id: r.TableID || r.table_id,
+            reservation_date: r.ReservationDate || r.reservation_date,
+            table_fee: Number(r.TableFee || r.table_fee || 0),
+            status: r.Status || r.status,
+          })) || []
+        );
+
+        // ======== ORDER ========
+        const resOrder = await fetch("http://localhost:8080/order/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const orderData = await resOrder.json();
+
+        setOrders(
+          (orderData.data || []).map((o: any) => ({
+            id: o.ID || o.id,
+            table_id: o.TableID || o.table_id,
+            customer: o.Customer || o.customer,
+            total_amount: Number(o.Total || o.total || 0),
+            payment_method: o.PaymentMethod || o.payment_method || "",
+            status: o.Status || o.status,
+          }))
+        );
+      } catch (err) {
+        console.error("❌ Gagal fetch data:", err);
       }
+    };
 
-      const reservData = await resReserv.json();
+    fetchAllData();
+  }, []);
 
-      setReservations(
-        reservData.data?.map((r: any) => ({
-          id: r.ID || r.id,
-          name: r.Name || r.name,
-          phone: r.Phone || r.phone,
-          email: r.Email || r.email,
-          table_id: r.TableID || r.table_id,
-          reservation_date: r.ReservationDate || r.reservation_date,
-          table_fee: Number(r.TableFee || r.table_fee || 0),
-          status: r.Status || r.status,
-        })) || []
-      );
-    } catch (err) {
-      console.error("❌ Gagal fetch data:", err);
-    }
-  };
-
-  fetchAllData();
-}, [token]);
 
 
 
@@ -589,6 +612,81 @@ const cancelReservation = async (id: number) => {
   }
 };
 
+// ===== ORDER MANAGEMENT =====
+const viewOrderDetail = async (id: number) => {
+  try {
+    const res = await fetch(`http://localhost:8080/order/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Gagal mengambil detail order");
+
+    const raw = await res.json();
+    const d = raw.data || raw;
+
+    alert(`
+    🧾 Detail Order:
+      Customer: ${d.Customer ?? "-"}
+      Meja: ${d.Table?.TableNo ?? d.TableID ?? "-"}
+      Total: Rp ${(d.Total ?? 0).toLocaleString("id-ID")}
+      Status: ${d.Status ?? "-"}
+    `);
+  } catch (err) {
+    console.error("❌ Gagal ambil detail order:", err);
+    alert("❌ Gagal mengambil detail order.");
+  }
+};
+
+const printReceipt = async (id: number) => {
+  try {
+    const res = await fetch(`http://localhost:8080/order/${id}/receipt`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const raw = await res.json();
+    if (!res.ok || raw.status !== "success") {
+      alert("❌ Gagal mencetak struk");
+      return;
+    }
+
+    const receiptPath = raw.receipt;
+    const cleanPath = receiptPath.replace(/^src\//, "");
+    const pdfUrl = cleanPath.startsWith("http")
+      ? cleanPath
+      : `http://localhost:8080/${cleanPath}`;
+
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = `receipt_${id}.pdf`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    console.error("❌ Error printReceipt:", err);
+    alert("❌ Gagal mencetak struk.");
+  }
+};
+
+const deleteOrder = async (id: number) => {
+  if (!confirm(`🗑️ Yakin ingin menghapus order #${id}?`)) return;
+  try {
+    const res = await fetch(`http://localhost:8080/order/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Gagal hapus order");
+    alert("✅ Order berhasil dihapus!");
+    setOrders((prev) => prev.filter((o) => o.id !== id));
+  } catch (err) {
+    console.error("❌ Gagal hapus order:", err);
+    alert("❌ Gagal menghapus order.");
+  }
+};
+
+
 
   // ===== EDIT USER =====
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -751,7 +849,7 @@ const cancelReservation = async (id: number) => {
     { id: "user", label: "User Management", icon: Users },
     { id: "table", label: "Table Status", icon: Table2 },
     { id: 'reservation', label: 'Reservation', icon: ClipboardList }, // 🆕 Tambahan baru
-  { id: 'order', label: 'Order', icon: FileText },
+    { id: 'order', label: 'Order', icon: FileText },
   ];
 
   return (
@@ -1245,6 +1343,59 @@ const cancelReservation = async (id: number) => {
             </div>
           )}
 
+          {/* ===== ORDER (Admin) ===== */}
+          {activeTab === "order" && (
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold mb-4 text-gray-800">Daftar Order</h3>
+              {orders.length === 0 ? (
+                <p className="text-gray-500">Belum ada order.</p>
+              ) : (
+                <table className="w-full border rounded-lg overflow-hidden">
+                  <thead>
+                    <tr className="bg-gray-100 text-left">
+                      <th className="p-3 border">ID</th>
+                      <th className="p-3 border">Meja</th>
+                      <th className="p-3 border">Customer</th>
+                      <th className="p-3 border">Total</th>
+                      <th className="p-3 border">Status</th>
+                      <th className="p-3 border text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((o) => (
+                      <tr key={o.id} className="border-t hover:bg-gray-50">
+                        <td className="p-3 border">{o.id}</td>
+                        <td className="p-3 border">{o.table_id}</td>
+                        <td className="p-3 border">{o.customer}</td>
+                        <td className="p-3 border">Rp {(o.total_amount ?? 0).toLocaleString("id-ID")}</td>
+                        <td className="p-3 border capitalize">{o.status}</td>
+                        <td className="p-3 border text-center space-x-2">
+                          <button
+                            onClick={() => viewOrderDetail(o.id)}
+                            className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                          >
+                            Detail
+                          </button>
+                          <button
+                            onClick={() => printReceipt(o.id)}
+                            className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                          >
+                            Cetak Struk
+                          </button>
+                          <button
+                            onClick={() => deleteOrder(o.id)}
+                            className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
+                          >
+                            Hapus
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
 
 
           {/* ===== USER MANAGEMENT ===== */}
