@@ -296,9 +296,13 @@ const ContactSection = () => {
               Nikmati pengalaman minum kopi yang tak terlupakan di bawah naungan pohon rindang
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <button className="bg-white text-green-800 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl">
+              <a
+                href="/reservation"
+                className="bg-white text-green-800 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
                 Reservasi Sekarang
-              </button>
+              </a>
+
               <a
                 href="https://maps.app.goo.gl/gMrneHYa329Y7vM16"
                 target="_blank"
