@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Instagram, Facebook, Clock, Send, MessageSquare } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMugHot } from '@fortawesome/free-solid-svg-icons';
+import emailjs from "emailjs-com";
 
 interface ContactInfo {
   icon: React.ReactNode;
@@ -22,20 +23,46 @@ const ContactSection = () => {
 
   const [submitted, setSubmitted] = useState(false);
 
+  // === ✅ EmailJS initialization ===
+  React.useEffect(() => {
+    emailjs.init("R9C7eeOn55ffpsLR2"); // GANTI dengan public key kamu
+  }, []);
+
+  // === ✅ Handle Submit dengan async/await supaya error detail muncul ===
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const result = await emailjs.send(
+        "service_c4pywsa",   // GANTI dengan Service ID kamu
+        "template_qtctrhg",  // GANTI dengan Template ID kamu
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+          reply_to: formData.email, // ini penting
+
+        }
+      );
+
+      console.log("✅ EmailJS Success:", result.text);
+      setSubmitted(true);
+      setFormData({ name: '', email: '', phone: '', message: '' });
+
+      // Auto-reset tampilan setelah 3 detik
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (error: any) {
+      console.error("❌ EmailJS Error:", error);
+      alert(`Gagal mengirim pesan: ${error.text || JSON.stringify(error)}`);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', phone: '', message: '' });
-    }, 3000);
   };
 
   const contactInfo: ContactInfo[] = [
@@ -118,7 +145,7 @@ const ContactSection = () => {
                 <p className="text-gray-600">Pesan Anda telah terkirim. Kami akan segera menghubungi Anda.</p>
               </div>
             ) : (
-              <div className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-gray-900 font-semibold mb-2">Nama Lengkap</label>
                   <input
@@ -128,6 +155,7 @@ const ContactSection = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
                     placeholder="Masukkan nama Anda"
+                    required
                   />
                 </div>
 
@@ -140,6 +168,7 @@ const ContactSection = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all"
                     placeholder="email@example.com"
+                    required
                   />
                 </div>
 
@@ -164,17 +193,18 @@ const ContactSection = () => {
                     rows={4}
                     className="w-full px-4 py-3 rounded-lg border text-gray-500 border-gray-200 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-100 transition-all resize-none"
                     placeholder="Tulis pesan Anda di sini..."
+                    required
                   />
                 </div>
 
                 <button
-                  onClick={handleSubmit}
+                  type="submit"
                   className="w-full bg-green-800 text-white py-3 rounded-lg font-semibold hover:bg-green-900 transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center justify-center space-x-2"
                 >
                   <Send className="w-5 h-5" />
                   <span>Kirim Pesan</span>
                 </button>
-              </div>
+              </form>
             )}
           </div>
 
@@ -249,11 +279,9 @@ const ContactSection = () => {
           </div>
         </div>
 
-
         {/* Bottom CTA */}
         <div className="bg-gradient-to-r from-green-800 to-green-900 rounded-3xl p-8 lg:p-12 text-center">
           <div className="max-w-3xl mx-auto">
-            {/* Logo Icon - Updated to match Header */}
             <div className="flex justify-center mb-6">
               <div className="relative w-20 h-20 bg-gradient-to-br from-white to-green-50 rounded-2xl flex items-center justify-center shadow-2xl">
                 <FontAwesomeIcon icon={faMugHot} className="text-green-800 text-4xl" />
@@ -279,7 +307,6 @@ const ContactSection = () => {
               >
                 Lihat Lokasi
               </a>
-
             </div>
           </div>
         </div>
