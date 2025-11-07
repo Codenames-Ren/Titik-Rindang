@@ -52,6 +52,7 @@ func main() {
 	routes.OrderRoutes(router)
 
 	router.Static("/uploads/menu", "./src/uploads/menu")
+	router.Static("/uploads/receipts", "./src/uploads/receipts")
 
 	// Server berjalan di port 8080
 	port := os.Getenv("PORT")

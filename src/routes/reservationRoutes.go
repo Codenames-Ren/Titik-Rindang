@@ -16,5 +16,5 @@ func ReservationRoutes(router *gin.Engine) {
 	reservation.POST("/", controllers.CreateReservation)
 	reservation.POST("/confirm/:id", controllers.ConfirmReservation)
 	reservation.PUT("/:id", middlewares.AuthMiddleware(), middlewares.CashierMiddleware(), controllers.UpdateReservation)
-	reservation.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteReservation)
+	reservation.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.CashierMiddleware(), controllers.DeleteReservation)
 }
