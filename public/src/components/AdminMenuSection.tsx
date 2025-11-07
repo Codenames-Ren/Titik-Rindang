@@ -1,7 +1,7 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { PlusCircle, Coffee, Trash2 } from 'lucide-react';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { PlusCircle, Coffee, Trash2 } from "lucide-react";
 
 interface Menu {
   id: number;
@@ -14,18 +14,18 @@ interface Menu {
 export default function AdminMenuSection() {
   const router = useRouter();
   const [menus, setMenus] = useState<Menu[]>([]);
-  const [name, setName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [imageURL, setImageURL] = useState('');
-  const [price, setPrice] = useState('');
+  const [name, setName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [imageURL, setImageURL] = useState("");
+  const [price, setPrice] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const token =
-    typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // ===== Fetch menu list =====
   useEffect(() => {
-    fetch('http://localhost:8080/menu/')
+    fetch("http://localhost:8080/menu/")
       .then((res) => res.json())
       .then((data) => setMenus(data))
       .catch((err) => console.error(err));
@@ -33,73 +33,73 @@ export default function AdminMenuSection() {
 
   //button add new menu
   const handleAddMenu = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!token) return alert('Kamu belum login sebagai admin.');
+    e.preventDefault();
+    if (!token) return alert("Kamu belum login sebagai admin.");
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  const payload = {
-    Name: name,
-    Tagline: tagline,
-    ImageURL: imageURL,
-    Price: parseFloat(price),
-  };
+    const payload = {
+      Name: name,
+      Tagline: tagline,
+      ImageURL: imageURL,
+      Price: parseFloat(price),
+    };
 
-  console.log('Payload dikirim:', payload);
+    console.log("Payload dikirim:", payload);
 
-  try {
-    const res = await fetch('http://localhost:8080/menu/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("http://localhost:8080/menu/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    console.log('Response backend:', data);
+      const data = await res.json();
+      console.log("Response backend:", data);
 
-    if (!res.ok) {
-      throw new Error(data.error || 'Gagal menambahkan menu.');
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menambahkan menu.");
+      }
+
+      alert("✅ Menu berhasil ditambahkan!");
+      setName("");
+      setTagline("");
+      setImageURL("");
+      setPrice("");
+
+      const updatedMenus = await fetch("http://localhost:8080/menu/").then(
+        (r) => r.json()
+      );
+      setMenus(updatedMenus);
+    } catch (err) {
+      console.error("Gagal nambah menu:", err);
+      alert("❌ Gagal menambahkan menu. Cek console log.");
+    } finally {
+      setIsLoading(false);
     }
-
-    alert('✅ Menu berhasil ditambahkan!');
-    setName('');
-    setTagline('');
-    setImageURL('');
-    setPrice('');
-
-    const updatedMenus = await fetch('http://localhost:8080/menu/').then((r) => r.json());
-    setMenus(updatedMenus);
-  } catch (err) {
-    console.error('Gagal nambah menu:', err);
-    alert('❌ Gagal menambahkan menu. Cek console log.');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+  };
 
   // ===== Delete Menu (Admin only) =====
   const handleDelete = async (id: number) => {
-    if (!confirm('Yakin ingin menghapus menu ini?')) return;
+    if (!confirm("Yakin ingin menghapus menu ini?")) return;
 
     try {
       const res = await fetch(`http://localhost:8080/menu/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!res.ok) throw new Error('Gagal menghapus menu');
+      if (!res.ok) throw new Error("Gagal menghapus menu");
       setMenus(menus.filter((m) => m.id !== id));
-      alert('✅ Menu berhasil dihapus!');
+      alert("✅ Menu berhasil dihapus!");
     } catch (err) {
       console.error(err);
-      alert('❌ Gagal menghapus menu.');
+      alert("❌ Gagal menghapus menu.");
     }
   };
 
@@ -110,7 +110,7 @@ export default function AdminMenuSection() {
           <Coffee /> Menu Management
         </h1>
         <button
-          onClick={() => router.push('/admin')}
+          onClick={() => router.push("/admin")}
           className="text-green-700 underline font-medium"
         >
           ← Kembali ke Dashboard
@@ -123,9 +123,14 @@ export default function AdminMenuSection() {
           <PlusCircle /> Tambah Menu Baru
         </h2>
 
-        <form onSubmit={handleAddMenu} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form
+          onSubmit={handleAddMenu}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">Nama Menu</label>
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Nama Menu
+            </label>
             <input
               type="text"
               value={name}
@@ -136,7 +141,9 @@ export default function AdminMenuSection() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">Tagline</label>
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Tagline
+            </label>
             <input
               type="text"
               value={tagline}
@@ -146,7 +153,9 @@ export default function AdminMenuSection() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">URL Gambar</label>
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              URL Gambar
+            </label>
             <input
               type="text"
               value={imageURL}
@@ -156,7 +165,9 @@ export default function AdminMenuSection() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">Harga (Rp)</label>
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Harga (Rp)
+            </label>
             <input
               type="number"
               value={price}
@@ -172,7 +183,7 @@ export default function AdminMenuSection() {
               disabled={isLoading}
               className="bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 transition disabled:bg-green-400"
             >
-              {isLoading ? 'Loading...' : 'Tambah Menu'}
+              {isLoading ? "Loading..." : "Tambah Menu"}
             </button>
           </div>
         </form>
@@ -193,7 +204,9 @@ export default function AdminMenuSection() {
               />
             )}
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-800">{menu.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                {menu.name}
+              </h3>
               <p className="text-sm text-gray-500 mb-2">{menu.tagline}</p>
               <p className="text-green-700 font-semibold mb-3">
                 Rp {menu.price.toLocaleString()}
