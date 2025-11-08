@@ -1288,7 +1288,7 @@ export default function AdminSection() {
               ) : (
                 <table className="w-full border rounded-lg overflow-hidden">
                   <thead>
-                    <tr className="bg-green-600 border-gray-700 text-left">
+                    <tr className="bg-green-600 border-gray-700 text-left text-white">
                       <th className="p-3 border">ID</th>
                       <th className="p-3 border">Nama</th>
                       <th className="p-3 border">Meja</th>
@@ -1298,187 +1298,241 @@ export default function AdminSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {reservations.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-t text-gray-800 hover:bg-green-50"
-                      >
-                        <td className="p-3 border">{r.id}</td>
-                        <td className="p-3 border">{r.name}</td>
-                        <td className="p-3 border">{r.table_id}</td>
-                        <td className="p-3 border">
-                          {new Date(r.reservation_date).toLocaleString(
-                            "id-ID",
-                            { hour12: true, hour: "2-digit", minute: "2-digit" }
-                          )}
-                        </td>
-                        <td
-                          className={`p-3 border capitalize ${
-                            r.status === "unpaid"
-                              ? "text-amber-600"
-                              : r.status === "paid"
-                              ? "text-emerald-600"
-                              : "text-green-600"
-                          }`}
+                    {reservations.map((r) => {
+                      // ✅ Format tanggal seragam
+                      const formatDate = (isoString: string) => {
+                        const date = new Date(isoString);
+                        const tanggal = date.toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        });
+                        const jam = date.toLocaleTimeString("en-US", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        });
+                        return `${tanggal}, ${jam}`;
+                      };
+
+                      return (
+                        <tr
+                          key={r.id}
+                          className="border-t text-gray-800 hover:bg-green-50"
                         >
-                          {r.status}
-                        </td>
-                        <td className="p-3 border text-center space-x-2">
-                          {/* 🔍 Detail reservasi */}
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch(
-                                  `http://localhost:8080/reservation/${r.id}`,
-                                  {
-                                    headers: {
-                                      Authorization: `Bearer ${token}`,
-                                    },
-                                  }
-                                );
-                                if (!res.ok)
-                                  throw new Error(
-                                    "Gagal mengambil detail reservasi"
-                                  );
-                                const raw = await res.json();
-                                const d = raw.data || raw;
-
-                                Swal.fire({
-                                  title: "Detail Reservasi",
-                                  html: `
-                                    <b>Nama:</b> ${
-                                      d.Name ?? d.name ?? "-"
-                                    } <br/>
-                                    <b>Meja:</b> ${
-                                      d.Table?.TableNo ??
-                                      d.TableID ??
-                                      d.table_id ??
-                                      "-"
-                                    } <br/>
-                                    <b>Tanggal:</b> ${new Date(
-                                      d.ReservationDate || d.reservation_date
-                                    ).toLocaleString("id-ID")} <br/>
-                                    <b>Status:</b> ${
-                                      d.Status ?? d.status ?? "-"
-                                    }
-  `,
-                                  icon: "info",
-                                });
-                              } catch (err) {
-                                Swal.fire(
-                                  "Gagal",
-                                  "Gagal mengambil detail reservasi.",
-                                  "error"
-                                );
-                              }
-                            }}
-                            className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                          <td className="p-3 border">{r.id}</td>
+                          <td className="p-3 border">{r.name}</td>
+                          <td className="p-3 border">{r.table_id}</td>
+                          <td className="p-3 border">
+                            {formatDate(r.reservation_date)}
+                          </td>
+                          <td
+                            className={`p-3 border capitalize font-semibold ${
+                              r.status === "unpaid"
+                                ? "text-amber-600"
+                                : r.status === "paid"
+                                ? "text-emerald-600"
+                                : "text-green-600"
+                            }`}
                           >
-                            Detail
-                          </button>
+                            {r.status}
+                          </td>
 
-                          {/* ✅ Konfirmasi reservasi */}
-                          {r.status.toLowerCase() === "unpaid" && (
-                            <>
-                              <button
-                                onClick={async () => {
-                                  const sure = await Swal.fire({
-                                    title: `Konfirmasi Pembayaran #${r.id}?`,
-                                    text: "Pastikan pembayaran sudah diterima.",
-                                    icon: "question",
-                                    showCancelButton: true,
-                                    confirmButtonText: "Konfirmasi",
-                                    cancelButtonText: "Batal",
+                          <td className="p-3 border text-center space-x-2">
+                            {/* 🔍 Detail reservasi */}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(
+                                    `http://localhost:8080/reservation/${r.id}`,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                    }
+                                  );
+                                  if (!res.ok)
+                                    throw new Error(
+                                      "Gagal mengambil detail reservasi"
+                                    );
+                                  const raw = await res.json();
+                                  const d = raw.data || raw;
+
+                                  Swal.fire({
+                                    title:
+                                      "<h3 style='font-size:20px; font-weight:700; margin-bottom:10px;'>Detail Reservasi</h3>",
+                                    html: `
+                            <div style="display:flex; justify-content:center;">
+                              <table style="
+                                border-collapse: collapse;
+                                text-align: left;
+                                font-size: 16px;
+                                line-height: 1.6;
+                                color: #333;
+                              ">
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Nama</td>
+                                  <td style="padding: 6px 10px;">: ${
+                                    d.Name ?? d.name ?? "-"
+                                  }</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Telepon</td>
+                                  <td style="padding: 6px 10px;">: ${
+                                    d.Phone ?? d.phone ?? "-"
+                                  }</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Email</td>
+                                  <td style="padding: 6px 10px;">: ${
+                                    d.Email ?? d.email ?? "-"
+                                  }</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Meja</td>
+                                  <td style="padding: 6px 10px;">: ${
+                                    d.Table?.TableNo ??
+                                    d.TableID ??
+                                    d.table_id ??
+                                    "-"
+                                  }</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Tanggal</td>
+                                  <td style="padding: 6px 10px;">: ${formatDate(
+                                    d.ReservationDate || d.reservation_date
+                                  )}</td>
+                                </tr>
+                                <tr>
+                                  <td style="padding: 6px 10px; font-weight:600;">Status</td>
+                                  <td style="padding: 6px 10px;">: ${
+                                    d.Status ?? d.status ?? "-"
+                                  }</td>
+                                </tr>
+                              </table>
+                            </div>
+                          `,
+                                    icon: "info",
+                                    confirmButtonColor: "#16a34a",
+                                    width: 450,
+                                    customClass: {
+                                      popup: "rounded-xl",
+                                    },
                                   });
-                                  if (!sure.isConfirmed) return;
+                                } catch (err) {
+                                  Swal.fire(
+                                    "Gagal",
+                                    "Gagal mengambil detail reservasi.",
+                                    "error"
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                            >
+                              Detail
+                            </button>
 
-                                  return;
-                                  try {
-                                    const res = await fetch(
-                                      `http://localhost:8080/reservation/confirm/${r.id}`,
-                                      {
-                                        method: "POST",
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                      }
-                                    );
-                                    if (!res.ok)
-                                      throw new Error(
-                                        "Gagal konfirmasi reservasi"
+                            {/* ✅ Konfirmasi reservasi */}
+                            {r.status.toLowerCase() === "unpaid" && (
+                              <>
+                                <button
+                                  onClick={async () => {
+                                    const sure = await Swal.fire({
+                                      title: `Konfirmasi Pembayaran #${r.id}?`,
+                                      text: "Pastikan pembayaran sudah diterima.",
+                                      icon: "question",
+                                      showCancelButton: true,
+                                      confirmButtonText: "Konfirmasi",
+                                      cancelButtonText: "Batal",
+                                      confirmButtonColor: "#16a34a",
+                                    });
+                                    if (!sure.isConfirmed) return;
+
+                                    try {
+                                      const res = await fetch(
+                                        `http://localhost:8080/reservation/confirm/${r.id}`,
+                                        {
+                                          method: "POST",
+                                          headers: {
+                                            Authorization: `Bearer ${token}`,
+                                          },
+                                        }
                                       );
-                                    Swal.fire(
-                                      "Berhasil",
-                                      "Pembayaran reservasi dikonfirmasi!",
-                                      "success"
-                                    );
-
-                                    fetchReservations(); // refresh data
-                                  } catch (err) {
-                                    Swal.fire(
-                                      "Gagal",
-                                      "Gagal konfirmasi reservasi.",
-                                      "error"
-                                    );
-                                  }
-                                }}
-                                className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
-                              >
-                                Konfirmasi
-                              </button>
-
-                              {/* ❌ Cancel reservasi */}
-                              <button
-                                onClick={async () => {
-                                  const sure = await Swal.fire({
-                                    title: `Batalkan Reservasi #${r.id}?`,
-                                    text: "Reservasi akan dihapus permanen.",
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonText: "Batalkan",
-                                    cancelButtonText: "Tidak",
-                                  });
-                                  if (!sure.isConfirmed) return;
-
-                                  return;
-                                  try {
-                                    const res = await fetch(
-                                      `http://localhost:8080/reservation/${r.id}`,
-                                      {
-                                        method: "DELETE",
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                      }
-                                    );
-                                    if (!res.ok)
-                                      throw new Error(
-                                        "Gagal membatalkan reservasi"
+                                      if (!res.ok)
+                                        throw new Error(
+                                          "Gagal konfirmasi reservasi"
+                                        );
+                                      Swal.fire(
+                                        "Berhasil",
+                                        "Pembayaran reservasi dikonfirmasi!",
+                                        "success"
                                       );
-                                    Swal.fire(
-                                      "Berhasil",
-                                      "Reservasi berhasil dibatalkan!",
-                                      "success"
-                                    );
+                                      fetchReservations();
+                                    } catch (err) {
+                                      Swal.fire(
+                                        "Gagal",
+                                        "Gagal konfirmasi reservasi.",
+                                        "error"
+                                      );
+                                    }
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-sm"
+                                >
+                                  Konfirmasi
+                                </button>
 
-                                    fetchReservations(); // refresh data otomatis
-                                  } catch (err) {
-                                    Swal.fire(
-                                      "Gagal",
-                                      "Gagal membatalkan reservasi.",
-                                      "error"
-                                    );
-                                  }
-                                }}
-                                className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                                {/* ❌ Cancel reservasi */}
+                                <button
+                                  onClick={async () => {
+                                    const sure = await Swal.fire({
+                                      title: `Batalkan Reservasi #${r.id}?`,
+                                      text: "Reservasi akan dihapus permanen.",
+                                      icon: "warning",
+                                      showCancelButton: true,
+                                      confirmButtonText: "Batalkan",
+                                      cancelButtonText: "Tidak",
+                                      confirmButtonColor: "#dc2626",
+                                    });
+                                    if (!sure.isConfirmed) return;
+
+                                    try {
+                                      const res = await fetch(
+                                        `http://localhost:8080/reservation/${r.id}`,
+                                        {
+                                          method: "DELETE",
+                                          headers: {
+                                            Authorization: `Bearer ${token}`,
+                                          },
+                                        }
+                                      );
+                                      if (!res.ok)
+                                        throw new Error(
+                                          "Gagal membatalkan reservasi"
+                                        );
+                                      Swal.fire(
+                                        "Berhasil",
+                                        "Reservasi berhasil dibatalkan!",
+                                        "success"
+                                      );
+                                      fetchReservations();
+                                    } catch (err) {
+                                      Swal.fire(
+                                        "Gagal",
+                                        "Gagal membatalkan reservasi.",
+                                        "error"
+                                      );
+                                    }
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}

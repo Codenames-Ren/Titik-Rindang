@@ -499,9 +499,9 @@ export default function StaffSection() {
                   {reservations.length === 0 ? (
                     <p className="text-gray-500">Belum ada reservasi.</p>
                   ) : (
-                    <table className="w-full border">
+                    <table className="w-full border rounded-lg overflow-hidden">
                       <thead>
-                        <tr className="bg-blue-800 text-left">
+                        <tr className="bg-blue-800 text-left text-white">
                           <th className="p-3 border">Nama</th>
                           <th className="p-3 border">Telepon</th>
                           <th className="p-3 border">Email</th>
@@ -512,38 +512,57 @@ export default function StaffSection() {
                         </tr>
                       </thead>
                       <tbody>
-                        {reservations.map((r, i) => (
-                          <tr
-                            key={r.id || i}
-                            className="border-t text-gray-700 hover:bg-blue-50"
-                          >
-                            <td className="p-3 border">{r.name}</td>
-                            <td className="p-3 border">{r.phone}</td>
-                            <td className="p-3 border">{r.email || "-"}</td>
-                            <td className="p-3 border">
-                              {r.table?.table_no || r.table_id || "-"}
-                            </td>
-                            <td className="p-3 border">
-                              {new Date(r.reservation_date).toLocaleString(
-                                "id-ID"
-                              )}
-                            </td>
-                            <td className="p-3 border text-right">
-                              Rp {(r.table_fee ?? 0).toLocaleString("id-ID")}
-                            </td>
-                            <td
-                              className={`p-3 border font-semibold ${
-                                r.status === "Paid"
-                                  ? "text-emerald-600"
-                                  : r.status === "Unpaid"
-                                  ? "text-amber-600"
-                                  : "text-rose-600"
-                              }`}
+                        {reservations.map((r, i) => {
+                          // ✅ Format tanggal: "21 Maret 2025, 02.00 AM"
+                          const formatDate = (isoString: string) => {
+                            const date = new Date(isoString);
+
+                            const tanggal = date.toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            });
+
+                            const jam = date.toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            });
+
+                            return `${tanggal}, ${jam}`;
+                          };
+
+                          return (
+                            <tr
+                              key={r.id || i}
+                              className="border-t text-gray-700 hover:bg-blue-50"
                             >
-                              {r.status}
-                            </td>
-                          </tr>
-                        ))}
+                              <td className="p-3 border">{r.name}</td>
+                              <td className="p-3 border">{r.phone}</td>
+                              <td className="p-3 border">{r.email || "-"}</td>
+                              <td className="p-3 border">
+                                {r.table?.table_no || r.table_id || "-"}
+                              </td>
+                              <td className="p-3 border">
+                                {formatDate(r.reservation_date)}
+                              </td>
+                              <td className="p-3 border text-right">
+                                Rp {(r.table_fee ?? 0).toLocaleString("id-ID")}
+                              </td>
+                              <td
+                                className={`p-3 border font-semibold ${
+                                  r.status === "Paid"
+                                    ? "text-emerald-600"
+                                    : r.status === "Unpaid"
+                                    ? "text-amber-600"
+                                    : "text-rose-600"
+                                }`}
+                              >
+                                {r.status}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}

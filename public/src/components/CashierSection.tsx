@@ -262,41 +262,64 @@ export default function CashierSection() {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("Gagal fetch detail reservasi:", res.status, errText);
-        Swal.fire(
-          "Error",
-          `Gagal ambil detail reservasi (${res.status}) ❌`,
-          "error"
-        );
-
-        return;
-      }
-
+      if (!res.ok) throw new Error("Gagal mengambil detail reservasi");
       const raw = await res.json();
-      console.log("Reservation detail:", raw);
-
-      // ✅ Ambil isi dari raw.data
-      const d = raw.data;
+      const d = raw.data || raw;
 
       Swal.fire({
-        title: "Detail Reservasi",
+        title:
+          "<h3 style='font-size:20px; font-weight:700; margin-bottom:10px;'>Detail Reservasi</h3>",
         html: `
-    <div style="text-align:left">
-      <b>Nama:</b> ${d.Name ?? "-"} <br/>
-      <b>Meja:</b> ${d.Table?.TableNo ?? d.TableID ?? "-"} <br/>
-      <b>Tanggal:</b> ${new Date(d.ReservationDate).toLocaleString(
-        "id-ID"
-      )} <br/>
-      <b>Status:</b> ${d.Status ?? "-"}
-    </div>
-  `,
+        <div style="display:flex; justify-content:center;">
+          <table style="
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+          ">
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Nama</td>
+              <td style="padding: 6px 10px;">: ${d.Name ?? d.name ?? "-"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Telepon</td>
+              <td style="padding: 6px 10px;">: ${d.Phone ?? d.phone ?? "-"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Email</td>
+              <td style="padding: 6px 10px;">: ${d.Email ?? d.email ?? "-"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Meja</td>
+              <td style="padding: 6px 10px;">: ${
+                d.Table?.TableNo ?? d.TableID ?? d.table_id ?? "-"
+              }</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Tanggal</td>
+              <td style="padding: 6px 10px;">: ${formatDate(
+                d.ReservationDate || d.reservation_date
+              )}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; font-weight:600;">Status</td>
+              <td style="padding: 6px 10px;">: ${
+                d.Status ?? d.status ?? "-"
+              }</td>
+            </tr>
+          </table>
+        </div>
+      `,
         icon: "info",
+        confirmButtonColor: "#2563eb",
+        width: 450,
+        customClass: {
+          popup: "rounded-xl",
+        },
       });
     } catch (err) {
-      Swal.fire("Error", "Gagal mengambil detail reservasi ❌", "error");
+      Swal.fire("Gagal", "Gagal mengambil detail reservasi.", "error");
     }
   };
 
@@ -418,6 +441,25 @@ export default function CashierSection() {
     } catch (err) {
       Swal.fire("Gagal", "Terjadi kesalahan saat mencetak struk ❌", "error");
     }
+  };
+
+  // ✅ Tambahkan ini di atas return (bareng fungsi lain)
+  const formatDate = (isoString: string) => {
+    const date = new Date(isoString);
+
+    const tanggal = date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+
+    const jam = date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return `${tanggal}, ${jam}`;
   };
 
   // ===== UI =====
@@ -573,7 +615,7 @@ export default function CashierSection() {
                   ) : (
                     <table className="w-full border rounded-lg overflow-hidden">
                       <thead>
-                        <tr className="bg-orange-600 text-left">
+                        <tr className="bg-orange-600 text-left text-white">
                           <th className="p-3 border">ID</th>
                           <th className="p-3 border">Nama</th>
                           <th className="p-3 border">Meja</th>
@@ -583,46 +625,69 @@ export default function CashierSection() {
                         </tr>
                       </thead>
                       <tbody>
-                        {reservations.map((r) => (
-                          <tr
-                            key={r.id}
-                            className="border-t text-gray-700 hover:bg-gray-100"
-                          >
-                            <td className="p-3 border">{r.id}</td>
-                            <td className="p-3 border">{r.name}</td>
-                            <td className="p-3 border">{r.table_id}</td>
-                            <td className="p-3 border">{r.reservation_date}</td>
-                            <td className="p-3 border capitalize">
-                              {r.status}
-                            </td>
-                            <td className="p-3 border text-center space-x-2">
-                              <button
-                                onClick={() => viewReservationDetail(r.id)}
-                                className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
-                              >
-                                Detail
-                              </button>
+                        {reservations.map((r) => {
+                          // ✅ Format tanggal jadi "21 Maret 2025, 02.00 AM"
+                          const formatDate = (isoString: string) => {
+                            const date = new Date(isoString);
 
-                              {r.status.toLowerCase() === "unpaid" && (
-                                <>
-                                  <button
-                                    onClick={() => confirmPayment(r.id)}
-                                    className="px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 text-sm"
-                                  >
-                                    Konfirmasi
-                                  </button>
+                            const tanggal = date.toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            });
 
-                                  <button
-                                    onClick={() => cancelReservation(r.id)}
-                                    className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                            const jam = date.toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            });
+
+                            return `${tanggal}, ${jam}`;
+                          };
+
+                          return (
+                            <tr
+                              key={r.id}
+                              className="border-t text-gray-700 hover:bg-gray-100"
+                            >
+                              <td className="p-3 border">{r.id}</td>
+                              <td className="p-3 border">{r.name}</td>
+                              <td className="p-3 border">{r.table_id}</td>
+                              <td className="p-3 border">
+                                {formatDate(r.reservation_date)}
+                              </td>
+                              <td className="p-3 border capitalize">
+                                {r.status}
+                              </td>
+                              <td className="p-3 border text-center space-x-2">
+                                <button
+                                  onClick={() => viewReservationDetail(r.id)}
+                                  className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                                >
+                                  Detail
+                                </button>
+
+                                {r.status.toLowerCase() === "unpaid" && (
+                                  <>
+                                    <button
+                                      onClick={() => confirmPayment(r.id)}
+                                      className="px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 text-sm"
+                                    >
+                                      Konfirmasi
+                                    </button>
+
+                                    <button
+                                      onClick={() => cancelReservation(r.id)}
+                                      className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
