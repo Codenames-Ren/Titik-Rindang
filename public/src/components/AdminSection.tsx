@@ -1307,7 +1307,10 @@ export default function AdminSection() {
                         <td className="p-3 border">{r.name}</td>
                         <td className="p-3 border">{r.table_id}</td>
                         <td className="p-3 border">
-                          {new Date(r.reservation_date).toLocaleString("id-ID")}
+                          {new Date(r.reservation_date).toLocaleString(
+                            "id-ID",
+                            { hour12: true, hour: "2-digit", minute: "2-digit" }
+                          )}
                         </td>
                         <td
                           className={`p-3 border capitalize ${
@@ -1528,12 +1531,12 @@ export default function AdminSection() {
                           >
                             Cetak Struk
                           </button>
-                          <button
+                          {/* <button
                             onClick={() => deleteOrder(o.id)}
                             className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm"
                           >
                             Hapus
-                          </button>
+                          </button> */}
                         </td>
                       </tr>
                     ))}
