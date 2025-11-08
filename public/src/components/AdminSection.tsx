@@ -208,7 +208,6 @@ interface TableItem {
   status: "available" | "booked" | "in_used";
 }
 
-
 export default function AdminSection() {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "menu" | "user" | "table" | "reservation" | "order"
@@ -797,11 +796,10 @@ export default function AdminSection() {
   type TableStatus = "available" | "booked" | "in_used";
 
   interface TableItem {
-  id: string;
-  table_no?: number | string;
-  status: "available" | "booked" | "in_used";
-}
-
+    id: string;
+    table_no?: number | string;
+    status: "available" | "booked" | "in_used";
+  }
 
   const [tables, setTables] = useState<TableItem[]>([]);
   const [newTableId, setNewTableId] = useState("");
@@ -883,7 +881,7 @@ export default function AdminSection() {
   // 🔹 DELETE (Admin)
   const deleteTable = async (id: string) => {
     const sure = await Swal.fire({
-      title: `Hapus Meja ${id}?`,
+      title: `Hapus Meja ?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Hapus",
@@ -902,12 +900,13 @@ export default function AdminSection() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal menghapus meja");
+      if (!res.ok)
+        throw new Error(data.error || "Meja sedang digunakan atau dipesan!");
 
       setTables((prev) => prev.filter((t) => t.id !== id));
       Swal.fire("Berhasil", "Meja berhasil dihapus!", "success");
     } catch (err) {
-      Swal.fire("Gagal", "Gagal menghapus meja.", "error");
+      Swal.fire("Gagal", "Meja sedang digunakan atau dipesan!", "error");
     }
   };
 
